@@ -1,3 +1,9 @@
+<p align="center">
+  <img src="assets/peico-mascot.png" alt="Sappy the Pinecone" height="150" align="middle">
+  &nbsp;&nbsp;
+  <img src="assets/peico-letters.png" alt="PEICO" height="64" align="middle">
+</p>
+
 # PEICO Insurance Agent Benchmark (`peico-bench`)
 
 > A benchmark for LLM sales & service agents, set inside a deliberately gnarly,
