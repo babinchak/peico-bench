@@ -1,0 +1,31 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# Editors
+.idea/
+.vscode/
+*.swp
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+
+# Node
+node_modules/
+dist/
+build/
+
+# Generated dataset artifacts (built deterministically from seed; do not commit)
+/out/
+*.sqlite
+*.sqlite-journal
+peico.json
+*.ndjson
+data_card.md
