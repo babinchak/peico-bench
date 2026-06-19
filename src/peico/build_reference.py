@@ -83,6 +83,9 @@ def main() -> int:
     promos = load("promotions")["promotions"]
     discounts = load("discounts")["discounts"]
     kb = load("kb_documents")["kb_documents"]
+    rt = load("rate_tables")
+    reps = load("reps")["reps"]
+    disclosures = load("required_disclosures")["required_disclosures"]
 
     # --- regions / states ---
     for r in regions["regions"]:
@@ -168,6 +171,46 @@ def main() -> int:
              s(e.get("effective_start")), s(e.get("effective_end")), e["reason_doc"], e.get("notes")),
         )
 
+    # --- rate_tables (expand each line payload across regions) ---
+    meta = rt["meta"]
+    version = meta["version"]
+    eff = meta["effective"]
+    region_mult = rt["region_multipliers"]
+    overrides = rt.get("region_line_overrides", {})
+    invariant = set(rt.get("region_invariant_lines", []))
+    for line, payload in rt["lines"].items():
+        for region, base_mult in region_mult.items():
+            rf = 1.0 if line in invariant else overrides.get(region, {}).get(line, base_mult)
+            p = dict(payload)
+            p.update(line=line, region=region, region_factor=rf, version=version,
+                     money_unit=meta.get("money_unit", "usd"))
+            cur.execute(
+                "INSERT INTO rate_tables VALUES (?,?,?,?,?,?,?)",
+                (f"{line}:{region}:{version}", line, region, version,
+                 s(eff["start"]), s(eff["end"]), j(p)),
+            )
+
+    # --- reps + rep_licenses (expand states x lines) ---
+    for r in reps:
+        cur.execute(
+            "INSERT INTO reps VALUES (?,?,?,?,?,?,?)",
+            (r["rep_id"], r["name"], r["role"], r["discount_authority_pct"],
+             int(round(r["discount_authority_usd"] * 100)),
+             1 if r.get("can_override_uw") else 0, r.get("notes")),
+        )
+        for st_code in r["states"]:
+            for ln in r["lines"]:
+                cur.execute("INSERT INTO rep_licenses VALUES (?,?,?)", (r["rep_id"], st_code, ln))
+
+    # --- required_disclosures ---
+    for d in disclosures:
+        cur.execute(
+            "INSERT INTO required_disclosures VALUES (?,?,?,?,?,?,?,?,?,?)",
+            (d["disclosure_id"], d["line"], d["code"], d["title"], d["when_required"],
+             d.get("free_look_days"), 1 if d.get("mandatory") else 0, d.get("state"),
+             d.get("condition"), d["doc_id"]),
+        )
+
     con.commit()
     validate(cur)
     export_json(con)
@@ -207,6 +250,19 @@ def validate(cur: sqlite3.Cursor) -> None:
           "OR d.coverage_id NOT IN (SELECT coverage_id FROM coverages)")
     check("at least one retired-rider ($0 trap) promo exists",
           "SELECT COUNT(*) FROM promotions WHERE retired_rider=1", want_zero=False)
+    check("every rate_table line covers all 5 regions",
+          "SELECT COUNT(*) FROM (SELECT line FROM rate_tables GROUP BY line "
+          "HAVING COUNT(DISTINCT region) <> 5)")
+    check("every rep holds >=1 license",
+          "SELECT COUNT(*) FROM reps r WHERE NOT EXISTS "
+          "(SELECT 1 FROM rep_licenses l WHERE l.rep_id=r.rep_id)")
+    check("every suitability-required line has a FREE_LOOK disclosure",
+          "SELECT COUNT(*) FROM product_lines p WHERE p.requires_suitability=1 "
+          "AND NOT EXISTS (SELECT 1 FROM required_disclosures d "
+          "WHERE d.line=p.line AND d.code='FREE_LOOK')")
+    check("beneficiaries: PRIMARY split sums to 100 per policy (when present)",
+          "SELECT COUNT(*) FROM (SELECT policy_id FROM beneficiaries WHERE kind='PRIMARY' "
+          "GROUP BY policy_id HAVING SUM(percentage) <> 100)")
 
     if not all(checks):
         raise SystemExit("VALIDATION FAILED")
@@ -218,7 +274,8 @@ def export_json(con: sqlite3.Connection) -> None:
     cur = con.cursor()
     tables = [r[0] for r in cur.execute(
         "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name")]
-    json_cols = {"requires_underlying", "scope", "effect", "stacks_with", "caps", "applies_to"}
+    json_cols = {"requires_underlying", "scope", "effect", "stacks_with", "caps",
+                 "applies_to", "payload"}
     out = {}
     for t in tables:
         rows = []
@@ -240,7 +297,8 @@ def summarize(cur: sqlite3.Cursor) -> None:
     print("== row counts ==")
     for t in ["regions", "states", "product_lines", "tiers", "coverages",
               "tier_coverage_defaults", "eligibility_rules", "promotions",
-              "discounts", "kb_documents"]:
+              "discounts", "kb_documents", "rate_tables", "reps", "rep_licenses",
+              "required_disclosures", "beneficiaries", "disclosure_deliveries"]:
         n = cur.execute(f"SELECT COUNT(*) FROM {t}").fetchone()[0]
         print(f"  {t:<24} {n}")
 

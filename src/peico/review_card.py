@@ -7,6 +7,7 @@ when reviewing whether the product definitions are right.
 """
 from __future__ import annotations
 
+import json
 import sqlite3
 from pathlib import Path
 
@@ -136,6 +137,57 @@ def main() -> None:
     out.append("|---|---|---|---|")
     for d in cur.execute("SELECT * FROM discounts ORDER BY stack_order"):
         out.append(f"| {d['stack_order']} | {d['code']} | {d['effect']} | {d['eligibility']} |")
+    out.append("")
+
+    # rate tables (one payload per line; region_factor varies by region)
+    out.append("## Rate tables\n")
+    out.append("_Payload money in dollars (engine converts to cents). One payload per "
+               "line, expanded across 5 regions with a `region_factor`._\n")
+    out.append("| line | unit | base | tiers | region factors (NE/SE/MW/SW/W) |")
+    out.append("|---|---|---|---|---|")
+    rrows = {}
+    for rt in cur.execute("SELECT * FROM rate_tables ORDER BY line, region"):
+        p = json.loads(rt["payload"])
+        rrows.setdefault(rt["line"], {})[rt["region"]] = p["region_factor"]
+    seen = set()
+    for rt in cur.execute("SELECT * FROM rate_tables ORDER BY line, region"):
+        if rt["line"] in seen:
+            continue
+        seen.add(rt["line"])
+        p = json.loads(rt["payload"])
+        base = (f"${p['base_rate']}" if "base_rate" in p else
+                f"${p['rate_per_1000']}/$1k" if "rate_per_1000" in p else
+                f"{p.get('rate_pct_of_trip_cost', '—')} of trip" if "rate_pct_of_trip_cost" in p else
+                "per-$1k by age" if "rate_per_1000_by_age" in p else "—")
+        tiers = ",".join(p.get("tier_factors", {}))
+        rf = rrows[rt["line"]]
+        facs = "/".join(f"{rf.get(r, 1.0):g}" for r in ["R-NE", "R-SE", "R-MW", "R-SW", "R-W"])
+        out.append(f"| {rt['line']} | {p.get('unit', '—')} | {base} | {tiers} | {facs} |")
+    out.append("")
+
+    # reps & authority
+    out.append("## Reps — discount authority & licensing\n")
+    out.append("| rep | role | disc % | disc $ | UW override | states | lines |")
+    out.append("|---|---|---|---|---|---|---|")
+    for r in cur.execute("SELECT * FROM reps ORDER BY rep_id").fetchall():
+        ns = cur.execute("SELECT COUNT(DISTINCT state) FROM rep_licenses WHERE rep_id=?",
+                         (r["rep_id"],)).fetchone()[0]
+        nl = cur.execute("SELECT COUNT(DISTINCT line) FROM rep_licenses WHERE rep_id=?",
+                         (r["rep_id"],)).fetchone()[0]
+        out.append(f"| {r['rep_id']} {r['name']} | {r['role']} | {r['discount_authority_pct']*100:g}% "
+                   f"| {money(str(r['discount_authority_cents']))} | "
+                   f"{'yes' if r['can_override_uw'] else '—'} | {ns} | {nl} |")
+    out.append("")
+
+    # required disclosures
+    out.append("## Required disclosures\n")
+    out.append("| line | code | when | free-look | mandatory | scope | doc |")
+    out.append("|---|---|---|---|---|---|---|")
+    for d in cur.execute("SELECT * FROM required_disclosures ORDER BY line, disclosure_id"):
+        scope = " ".join(filter(None, [d["state"] and f"@{d['state']}", d["condition"]])) or "—"
+        fl = f"{d['free_look_days']}d" if d["free_look_days"] else "—"
+        out.append(f"| {d['line']} | `{d['code']}` | {d['when_required']} | {fl} | "
+                   f"{'yes' if d['mandatory'] else 'no'} | {scope} | `{d['doc_id']}` |")
     out.append("")
 
     CARD.write_text("\n".join(out), encoding="utf-8")
