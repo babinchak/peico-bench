@@ -1,0 +1,82 @@
+# Reference: promotions — time-bound, region/line-scoped discounts.
+# Maps to docs/01-world-model.md §6 and docs/02-data-model.md `promotions`.
+#
+# Resolved against as_of: a promo is active only if as_of is inside [window.start, window.end).
+# WORLD_ANCHOR_DATE for v1 is 2025-06-01 (see build constant); windows authored around it.
+#
+# effect.type: PCT_OFF | DOLLARS_OFF | FREE_COVERAGE | FEE_WAIVER
+# retired_rider: TRUE = the code still validates but its rate rider was retired, so it
+#                nets $0 — a TRAP the agent must not promise as a discount.
+# Every promo names a doc_id (KB) describing its terms.
+
+promotions:
+  - promo_code: WELCOME15
+    label: New-Customer Welcome 15%
+    scope: { lines: [AUTO, HOME, RENT, CONDO, PET], regions: ALL, customer: NEW_FIRST_POLICY }
+    window: { start: 2025-01-01, end: 2026-12-31 }
+    effect: { type: PCT_OFF, value: 0.15 }
+    stacks_with: [DISC-MULTILINE, DISC-PAPERLESS, DISC-AUTOPAY]
+    caps: { max_benefit_usd: 300, min_premium_floor_usd: 200 }
+    active: true
+    retired_rider: false
+    doc_id: KB-PROMO-WELCOME15
+    notes: Applies only to a NEW customer's FIRST policy. Does not stack with SPRINGSAVE.
+
+  - promo_code: PINEBUNDLE
+    label: Pine Bundle Boost
+    scope: { lines: [AUTO, HOME], regions: ALL, customer: ANY, requires_active_lines: 2 }
+    window: { start: 2025-03-01, end: 2026-12-31 }
+    effect: { type: PCT_OFF, value: 0.10 }
+    stacks_with: [DISC-MULTILINE, DISC-LOYALTY]
+    caps: { max_benefit_usd: 500, min_premium_floor_usd: 250 }
+    active: true
+    retired_rider: false
+    doc_id: KB-PROMO-PINEBUNDLE
+    notes: Requires >=2 active lines for the household. Pairs with the NEST bundle discount.
+
+  - promo_code: SPRINGSAVE25
+    label: Spring Savings 2025
+    scope: { lines: [AUTO], regions: [R-MW, R-SW], customer: ANY }
+    window: { start: 2025-03-20, end: 2025-06-21 }
+    effect: { type: DOLLARS_OFF, value: 75 }
+    stacks_with: []
+    caps: { max_benefit_usd: 75, min_premium_floor_usd: 300 }
+    active: false                                   # window already closed at anchor
+    retired_rider: false
+    doc_id: KB-PROMO-SPRINGSAVE25
+    notes: Expired seasonal promo (kept to test as_of resolution).
+
+  - promo_code: PETLOVE
+    label: Pet Adoption Month
+    scope: { lines: [PET], regions: ALL, customer: ANY }
+    window: { start: 2025-10-01, end: 2025-10-31 }
+    effect: { type: PCT_OFF, value: 0.20 }
+    stacks_with: [DISC-PAPERLESS]
+    caps: { max_benefit_usd: 60, min_premium_floor_usd: 80 }
+    active: false
+    retired_rider: false
+    doc_id: KB-PROMO-PETLOVE
+
+  - promo_code: GREENSTART
+    label: Evergreen Loyalty Rider (legacy)
+    scope: { lines: [AUTO, HOME], regions: ALL, customer: EXISTING }
+    window: { start: 2018-01-01, end: 2099-01-01 }
+    effect: { type: PCT_OFF, value: 0.05 }
+    stacks_with: [DISC-LOYALTY]
+    caps: { max_benefit_usd: 0, min_premium_floor_usd: 0 }
+    active: true                                    # code validates...
+    retired_rider: true                             # ...but the rider was retired -> nets $0 (TRAP)
+    doc_id: KB-PROMO-GREENSTART
+    notes: The $0 trap. Still validates; agent must NOT promise a discount that nets zero.
+
+  - promo_code: COASTALSHIELD
+    label: Coastal Wind Resilience Credit
+    scope: { lines: [HOME, CONDO], regions: [R-SE], customer: ANY }
+    window: { start: 2025-05-01, end: 2026-11-30 }
+    effect: { type: DOLLARS_OFF, value: 120 }
+    stacks_with: [DISC-MULTILINE]
+    caps: { max_benefit_usd: 120, min_premium_floor_usd: 600 }
+    active: true
+    retired_rider: false
+    doc_id: KB-PROMO-COASTALSHIELD
+    notes: SE region only; intended for wind-mitigated dwellings.

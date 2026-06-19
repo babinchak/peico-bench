@@ -1,0 +1,367 @@
+# Reference: tier_coverage_defaults — the (tier x coverage) matrix.
+# Maps to docs/02-data-model.md `tier_coverage_defaults`.
+#
+# Per cell:  inc  = included by default on this tier?
+#            val  = default limit/deductible/benefit (natural units; see coverages.yaml unit)
+#            edit = may the agent change it via endorsement? (default true; only set when false)
+# Omit val for pure flags when inc:false. usd/usd_split/usd_daily authored in DOLLARS.
+# A coverage missing from a tier's map is treated as inc:false, not editable-in.
+
+defaults:
+
+  AUTO:
+    SAPLING:
+      BI:   { inc: true,  val: "25000/50000" }
+      PD:   { inc: true,  val: 25000 }
+      UMUIM: { inc: false, val: "25000/50000" }     # optional below Evergreen
+      COLL: { inc: true,  val: 1000 }
+      COMP: { inc: true,  val: 1000 }
+      MED:  { inc: false, edit: false }              # Evergreen+ only
+      RENT_REIMB: { inc: false, edit: false }
+      ROAD: { inc: false }
+      GAP:  { inc: false }                           # eligibility-gated (financed only)
+      OEM:  { inc: false, edit: false }              # Sequoia only
+    PINE:
+      BI:   { inc: true,  val: "50000/100000" }
+      PD:   { inc: true,  val: 50000 }
+      UMUIM: { inc: false, val: "50000/100000" }
+      COLL: { inc: true,  val: 1000 }
+      COMP: { inc: true,  val: 500 }
+      MED:  { inc: false, edit: false }
+      RENT_REIMB: { inc: false, edit: false }
+      ROAD: { inc: false }
+      GAP:  { inc: false }
+      OEM:  { inc: false, edit: false }
+    EVERGREEN:
+      BI:   { inc: true,  val: "100000/300000" }
+      PD:   { inc: true,  val: 100000 }
+      UMUIM: { inc: true,  val: "100000/300000" }
+      COLL: { inc: true,  val: 500 }
+      COMP: { inc: true,  val: 500 }
+      MED:  { inc: true,  val: 5000 }
+      RENT_REIMB: { inc: true, val: 900 }
+      ROAD: { inc: false }                           # add-on at Evergreen
+      GAP:  { inc: false }
+      OEM:  { inc: false, edit: false }
+    SEQUOIA:
+      BI:   { inc: true,  val: "250000/500000" }
+      PD:   { inc: true,  val: 250000 }
+      UMUIM: { inc: true,  val: "250000/500000" }
+      COLL: { inc: true,  val: 250 }
+      COMP: { inc: true,  val: 100 }
+      MED:  { inc: true,  val: 10000 }
+      RENT_REIMB: { inc: true, val: 1500 }
+      ROAD: { inc: true,  val: true }                # included at Sequoia
+      GAP:  { inc: false }
+      OEM:  { inc: true,  val: true }                # Sequoia only
+    HERITAGE:                                        # retired 2009 — load-bearing quirk
+      # The trap: Sequoia-rich coverages (MED, RENT_REIMB, ROAD, OEM) sitting on a
+      # mid liability base — a combination NO current sellable tier offers. Dropping
+      # HERITAGE loses OEM+ROAD at this price and it cannot be re-bound.
+      BI:   { inc: true,  val: "100000/300000" }
+      PD:   { inc: true,  val: 50000 }
+      UMUIM: { inc: true,  val: "100000/300000" }
+      COLL: { inc: true,  val: 500 }
+      COMP: { inc: true,  val: 500 }
+      MED:  { inc: true,  val: 5000 }
+      RENT_REIMB: { inc: true, val: 900 }
+      ROAD: { inc: true,  val: true }
+      OEM:  { inc: true,  val: true }
+
+  HOME:
+    SAPLING:
+      DWELL: { inc: true, val: ~, edit: false }      # set from dwelling replacement_cost
+      OTHER_STR: { inc: true, val: ~, edit: false }  # ~10% of dwelling (derived)
+      LOSS_USE: { inc: true, val: ~, edit: false }
+      CONTENTS: { inc: true, val: 25000 }
+      LIAB: { inc: true, val: 100000 }
+      MEDPAY: { inc: true, val: 1000 }
+      DEDUCT: { inc: true, val: 2500 }
+      WIND_HAIL: { inc: true, val: 0.05 }
+      WATER_BACK: { inc: false }
+      ROOF_ACV: { inc: true, val: true }             # cheap tier pays roof on ACV basis
+      SERVICE_LN: { inc: false }
+    PINE:
+      DWELL: { inc: true, val: ~, edit: false }
+      OTHER_STR: { inc: true, val: ~, edit: false }
+      LOSS_USE: { inc: true, val: ~, edit: false }
+      CONTENTS: { inc: true, val: 50000 }
+      LIAB: { inc: true, val: 300000 }
+      MEDPAY: { inc: true, val: 2000 }
+      DEDUCT: { inc: true, val: 1000 }
+      WIND_HAIL: { inc: true, val: 0.02 }
+      WATER_BACK: { inc: true, val: 5000 }
+      ROOF_ACV: { inc: false }
+      SERVICE_LN: { inc: false }
+    EVERGREEN:
+      DWELL: { inc: true, val: ~, edit: false }
+      OTHER_STR: { inc: true, val: ~, edit: false }
+      LOSS_USE: { inc: true, val: ~, edit: false }
+      CONTENTS: { inc: true, val: 100000 }
+      LIAB: { inc: true, val: 500000 }
+      MEDPAY: { inc: true, val: 5000 }
+      DEDUCT: { inc: true, val: 1000 }
+      WIND_HAIL: { inc: true, val: 0.02 }
+      WATER_BACK: { inc: true, val: 10000 }
+      ROOF_ACV: { inc: false }
+      SERVICE_LN: { inc: true, val: true }
+    SEQUOIA:
+      DWELL: { inc: true, val: ~, edit: false }
+      OTHER_STR: { inc: true, val: ~, edit: false }
+      LOSS_USE: { inc: true, val: ~, edit: false }
+      CONTENTS: { inc: true, val: 200000 }
+      LIAB: { inc: true, val: 1000000 }
+      MEDPAY: { inc: true, val: 10000 }
+      DEDUCT: { inc: true, val: 500 }
+      WIND_HAIL: { inc: true, val: 0.01 }
+      WATER_BACK: { inc: true, val: 25000 }
+      ROOF_ACV: { inc: false }
+      SERVICE_LN: { inc: true, val: true }
+    EVERGREEN_CLASSIC:                               # retired 2018 — different wind/hail math
+      DWELL: { inc: true, val: ~, edit: false }
+      OTHER_STR: { inc: true, val: ~, edit: false }
+      LOSS_USE: { inc: true, val: ~, edit: false }
+      CONTENTS: { inc: true, val: 100000 }
+      LIAB: { inc: true, val: 500000 }
+      MEDPAY: { inc: true, val: 5000 }
+      DEDUCT: { inc: true, val: 1000 }
+      WIND_HAIL: { inc: true, val: 0.015, edit: false }  # legacy flat-cap math (see KB)
+      WATER_BACK: { inc: true, val: 10000 }
+      SERVICE_LN: { inc: true, val: true }
+
+  RENT:
+    SAPLING:
+      CONTENTS: { inc: true, val: 15000 }
+      LOSS_USE: { inc: true, val: 4500 }
+      LIAB: { inc: true, val: 100000 }
+      MEDPAY: { inc: true, val: 1000 }
+      DEDUCT: { inc: true, val: 1000 }
+      REPL_COST: { inc: false }
+    PINE:
+      CONTENTS: { inc: true, val: 30000 }
+      LOSS_USE: { inc: true, val: 9000 }
+      LIAB: { inc: true, val: 300000 }
+      MEDPAY: { inc: true, val: 2000 }
+      DEDUCT: { inc: true, val: 500 }
+      REPL_COST: { inc: false }
+    EVERGREEN:
+      CONTENTS: { inc: true, val: 50000 }
+      LOSS_USE: { inc: true, val: 15000 }
+      LIAB: { inc: true, val: 500000 }
+      MEDPAY: { inc: true, val: 5000 }
+      DEDUCT: { inc: true, val: 500 }
+      REPL_COST: { inc: true, val: true }
+
+  CONDO:
+    SAPLING:
+      UNIT_IMP: { inc: true, val: 25000 }
+      CONTENTS: { inc: true, val: 25000 }
+      LOSS_USE: { inc: true, val: 7500 }
+      LIAB: { inc: true, val: 100000 }
+      MEDPAY: { inc: true, val: 1000 }
+      LOSS_ASSESS: { inc: true, val: 1000 }
+      DEDUCT: { inc: true, val: 1000 }
+      WATER_BACK: { inc: false }
+    PINE:
+      UNIT_IMP: { inc: true, val: 50000 }
+      CONTENTS: { inc: true, val: 50000 }
+      LOSS_USE: { inc: true, val: 15000 }
+      LIAB: { inc: true, val: 300000 }
+      MEDPAY: { inc: true, val: 2000 }
+      LOSS_ASSESS: { inc: true, val: 5000 }
+      DEDUCT: { inc: true, val: 1000 }
+      WATER_BACK: { inc: true, val: 5000 }
+    EVERGREEN:
+      UNIT_IMP: { inc: true, val: 100000 }
+      CONTENTS: { inc: true, val: 100000 }
+      LOSS_USE: { inc: true, val: 30000 }
+      LIAB: { inc: true, val: 500000 }
+      MEDPAY: { inc: true, val: 5000 }
+      LOSS_ASSESS: { inc: true, val: 25000 }
+      DEDUCT: { inc: true, val: 500 }
+      WATER_BACK: { inc: true, val: 10000 }
+    SEQUOIA:
+      UNIT_IMP: { inc: true, val: 200000 }
+      CONTENTS: { inc: true, val: 200000 }
+      LOSS_USE: { inc: true, val: 60000 }
+      LIAB: { inc: true, val: 1000000 }
+      MEDPAY: { inc: true, val: 10000 }
+      LOSS_ASSESS: { inc: true, val: 50000 }
+      DEDUCT: { inc: true, val: 500 }
+      WATER_BACK: { inc: true, val: 25000 }
+
+  UMBR:
+    PINE:
+      LIMIT: { inc: true, val: 1000000, edit: false }
+      SIR:   { inc: true, val: 0 }
+      UM_EXCESS: { inc: false }
+    EVERGREEN:
+      LIMIT: { inc: true, val: 2000000, edit: false }
+      SIR:   { inc: true, val: 0 }
+      UM_EXCESS: { inc: true, val: true }
+    SEQUOIA:
+      LIMIT: { inc: true, val: 5000000, edit: false }
+      SIR:   { inc: true, val: 0 }
+      UM_EXCESS: { inc: true, val: true }
+
+  PET:
+    SAPLING:
+      ANNUAL_MAX: { inc: true, val: 5000 }
+      DEDUCT: { inc: true, val: 500 }
+      REIMB_PCT: { inc: true, val: 0.70 }
+      WELLNESS: { inc: false }
+      EXAM_FEE: { inc: false }
+      DENTAL: { inc: false }
+    PINE:
+      ANNUAL_MAX: { inc: true, val: 10000 }
+      DEDUCT: { inc: true, val: 250 }
+      REIMB_PCT: { inc: true, val: 0.80 }
+      WELLNESS: { inc: false }
+      EXAM_FEE: { inc: true, val: true }
+      DENTAL: { inc: false }
+    EVERGREEN:
+      ANNUAL_MAX: { inc: true, val: 20000 }
+      DEDUCT: { inc: true, val: 100 }
+      REIMB_PCT: { inc: true, val: 0.90 }
+      WELLNESS: { inc: true, val: true }
+      EXAM_FEE: { inc: true, val: true }
+      DENTAL: { inc: true, val: true }
+
+  LIFE_T:
+    PINE:
+      FACE: { inc: true, val: 100000 }
+      TERM_LEN: { inc: true, val: 10 }
+      ADB: { inc: false }
+      WAIVER: { inc: false }
+      CHILD_RIDR: { inc: false }
+      CONVERT: { inc: false, edit: false }
+    EVERGREEN:
+      FACE: { inc: true, val: 250000 }
+      TERM_LEN: { inc: true, val: 20 }
+      ADB: { inc: false }
+      WAIVER: { inc: true, val: true }
+      CHILD_RIDR: { inc: false }
+      CONVERT: { inc: true, val: true }
+    SEQUOIA:
+      FACE: { inc: true, val: 500000 }
+      TERM_LEN: { inc: true, val: 30 }
+      ADB: { inc: true, val: true }
+      WAIVER: { inc: true, val: true }
+      CHILD_RIDR: { inc: true, val: true }
+      CONVERT: { inc: true, val: true }
+
+  LIFE_W:
+    PINE:
+      FACE: { inc: true, val: 50000 }
+      CASH_VAL: { inc: true, val: true, edit: false }
+      PUA: { inc: false }
+      ADB: { inc: false }
+      WAIVER: { inc: false }
+      LTC_RIDER: { inc: false, edit: false }
+    EVERGREEN:
+      FACE: { inc: true, val: 100000 }
+      CASH_VAL: { inc: true, val: true, edit: false }
+      PUA: { inc: true, val: true }
+      ADB: { inc: false }
+      WAIVER: { inc: true, val: true }
+      LTC_RIDER: { inc: false, edit: false }
+    SEQUOIA:
+      FACE: { inc: true, val: 250000 }
+      CASH_VAL: { inc: true, val: true, edit: false }
+      PUA: { inc: true, val: true }
+      ADB: { inc: true, val: true }
+      WAIVER: { inc: true, val: true }
+      LTC_RIDER: { inc: true, val: true }
+
+  HLTH:
+    SAPLING:
+      ACCIDENT: { inc: true, val: 5000 }
+      CRIT_ILL: { inc: false }
+      HOSP_INDEM: { inc: false }                     # not sellable in WA (state rule)
+      ER_BENEFIT: { inc: true, val: 250 }
+      WELLNESS: { inc: false }
+    PINE:
+      ACCIDENT: { inc: true, val: 10000 }
+      CRIT_ILL: { inc: true, val: 10000 }
+      HOSP_INDEM: { inc: true, val: 200 }
+      ER_BENEFIT: { inc: true, val: 500 }
+      WELLNESS: { inc: false }
+    EVERGREEN:
+      ACCIDENT: { inc: true, val: 25000 }
+      CRIT_ILL: { inc: true, val: 25000 }
+      HOSP_INDEM: { inc: true, val: 400 }
+      ER_BENEFIT: { inc: true, val: 1000 }
+      WELLNESS: { inc: true, val: true }
+
+  TRVL:
+    SAPLING:
+      TRIP_CANCEL: { inc: true, val: 2500 }
+      MEDICAL: { inc: true, val: 25000 }
+      EVAC: { inc: true, val: 100000 }
+      BAGGAGE: { inc: true, val: 750 }
+      RENTAL_CAR: { inc: false }
+      CFAR: { inc: false, edit: false }
+    PINE:
+      TRIP_CANCEL: { inc: true, val: 7500 }
+      MEDICAL: { inc: true, val: 50000 }
+      EVAC: { inc: true, val: 250000 }
+      BAGGAGE: { inc: true, val: 1500 }
+      RENTAL_CAR: { inc: true, val: true }
+      CFAR: { inc: false, edit: false }
+    EVERGREEN:
+      TRIP_CANCEL: { inc: true, val: 15000 }
+      MEDICAL: { inc: true, val: 100000 }
+      EVAC: { inc: true, val: 500000 }
+      BAGGAGE: { inc: true, val: 3000 }
+      RENTAL_CAR: { inc: true, val: true }
+      CFAR: { inc: true, val: true }
+
+  # --- AUTO specialty sub-lines ---
+  MOTO:
+    PINE:
+      BI: { inc: true, val: "50000/100000" }
+      PD: { inc: true, val: 50000 }
+      COLL: { inc: true, val: 500 }
+      COMP: { inc: true, val: 500 }
+      CUSTOM_PRT: { inc: false }                     # unavailable in TX
+    EVERGREEN:
+      BI: { inc: true, val: "100000/300000" }
+      PD: { inc: true, val: 100000 }
+      COLL: { inc: true, val: 250 }
+      COMP: { inc: true, val: 250 }
+      CUSTOM_PRT: { inc: true, val: 5000 }
+  RV:
+    PINE:
+      BI: { inc: true, val: "50000/100000" }
+      PD: { inc: true, val: 50000 }
+      COLL: { inc: true, val: 1000 }
+      COMP: { inc: true, val: 500 }
+      VAC_LIAB: { inc: true, val: 10000 }
+    EVERGREEN:
+      BI: { inc: true, val: "100000/300000" }
+      PD: { inc: true, val: 100000 }
+      COLL: { inc: true, val: 500 }
+      COMP: { inc: true, val: 250 }
+      VAC_LIAB: { inc: true, val: 25000 }
+  BOAT:
+    PINE:
+      HULL: { inc: true, val: 25000 }
+      LIAB: { inc: true, val: "100000/300000" }
+      COMP: { inc: true, val: 500 }
+      WRECK_REMV: { inc: true, val: 5000 }
+    EVERGREEN:
+      HULL: { inc: true, val: 75000 }
+      LIAB: { inc: true, val: "300000/500000" }
+      COMP: { inc: true, val: 250 }
+      WRECK_REMV: { inc: true, val: 15000 }
+  CLSC:
+    PINE:
+      AGREED_VAL: { inc: true, val: 30000 }
+      LIAB: { inc: true, val: "100000/300000" }
+      COMP: { inc: true, val: 500 }
+      SPARE_PRTS: { inc: false }
+    EVERGREEN:
+      AGREED_VAL: { inc: true, val: 75000 }
+      LIAB: { inc: true, val: "250000/500000" }
+      COMP: { inc: true, val: 250 }
+      SPARE_PRTS: { inc: true, val: 5000 }

@@ -1,0 +1,131 @@
+# Reference: coverage components per line.
+# Maps to docs/01-world-model.md §4 and docs/02-data-model.md `coverages`.
+#
+# Coverages are ROWS, not adjectives — "did the agent add MED?" is a diff.
+# Cryptic EVERGREEN codes are preserved on purpose; plain names live here and
+# get fully decoded in the KB (kb_documents).
+#
+# coverage_id is derived by the build as "<LINE>:<CODE>".
+# kind:  limit | deductible | flag | feature
+# unit:  usd        single-limit/benefit or deductible, authored in DOLLARS
+#        usd_split  "perPerson/perAccident" in DOLLARS (e.g. "50000/100000")
+#        usd_daily  per-day benefit in DOLLARS (hospital indemnity)
+#        pct        decimal fraction (0.02 = 2%); reimbursement % or % deductible
+#        bool       present/absent flag
+#        years      integer term length
+# (The build converts usd/usd_split/usd_daily to integer CENTS for storage.)
+
+coverages:
+  AUTO:
+    - { code: BI,         label: Bodily Injury Liability,            kind: limit,      unit: usd_split, notes: Per-person / per-accident. Limit rises by tier. }
+    - { code: PD,         label: Property Damage Liability,          kind: limit,      unit: usd,       notes: Limit rises by tier. }
+    - { code: UMUIM,      label: Uninsured/Underinsured Motorist,    kind: limit,      unit: usd_split, notes: Optional below Evergreen. Glossary KB decodes UM/UIM. }
+    - { code: COLL,       label: Collision,                          kind: deductible, unit: usd,       notes: Deductible falls by tier. }
+    - { code: COMP,       label: Comprehensive,                      kind: deductible, unit: usd,       notes: Deductible falls by tier. }
+    - { code: MED,        label: Medical Payments,                   kind: limit,      unit: usd,       notes: Evergreen+ only. }
+    - { code: RENT_REIMB, label: Rental Reimbursement,               kind: limit,      unit: usd,       notes: Per-day/max. Evergreen+ only. }
+    - { code: ROAD,       label: Roadside Assistance,                kind: flag,       unit: bool,      notes: Included at Sequoia; add-on elsewhere. }
+    - { code: GAP,        label: Loan/Lease Gap,                     kind: flag,       unit: bool,      notes: Eligible only if the vehicle is financed (eligibility rule). }
+    - { code: OEM,        label: OEM Parts Guarantee,                kind: flag,       unit: bool,      notes: Sequoia only. }
+
+  HOME:
+    - { code: DWELL,      label: Dwelling (Coverage A),              kind: limit,      unit: usd,       notes: Based on replacement cost. }
+    - { code: OTHER_STR,  label: Other Structures (Coverage B),      kind: limit,      unit: usd,       notes: Typically a % of dwelling. }
+    - { code: CONTENTS,   label: Personal Property (Coverage C),     kind: limit,      unit: usd }
+    - { code: LOSS_USE,   label: Loss of Use (Coverage D),           kind: limit,      unit: usd }
+    - { code: LIAB,       label: Personal Liability (Coverage E),    kind: limit,      unit: usd }
+    - { code: MEDPAY,     label: Medical Payments (Coverage F),      kind: limit,      unit: usd }
+    - { code: DEDUCT,     label: All-Peril Deductible,               kind: deductible, unit: usd,       notes: Falls by tier. }
+    - { code: WIND_HAIL,  label: Wind/Hail Deductible,               kind: deductible, unit: pct,       notes: "% of dwelling. In FL this is the separate hurricane deductible (state rule)." }
+    - { code: WATER_BACK, label: Water Backup,                       kind: limit,      unit: usd,       notes: Sewer/sump backup endorsement. }
+    - { code: ROOF_ACV,   label: Roof Actual-Cash-Value Schedule,    kind: flag,       unit: bool,      notes: Older-roof endorsement; pays ACV not replacement. }
+    - { code: SERVICE_LN, label: Service Line,                       kind: flag,       unit: bool }
+
+  CONDO:
+    - { code: UNIT_IMP,   label: Unit/Improvements (Coverage A),     kind: limit,      unit: usd,       notes: Walls-in; carves around HOA master. }
+    - { code: CONTENTS,   label: Personal Property (Coverage C),     kind: limit,      unit: usd }
+    - { code: LOSS_USE,   label: Loss of Use (Coverage D),           kind: limit,      unit: usd }
+    - { code: LIAB,       label: Personal Liability (Coverage E),    kind: limit,      unit: usd }
+    - { code: MEDPAY,     label: Medical Payments (Coverage F),      kind: limit,      unit: usd }
+    - { code: LOSS_ASSESS, label: Loss Assessment,                   kind: limit,      unit: usd,       notes: Tied to the HOA master-policy deductible field. }
+    - { code: DEDUCT,     label: All-Peril Deductible,               kind: deductible, unit: usd }
+    - { code: WATER_BACK, label: Water Backup,                       kind: limit,      unit: usd }
+
+  RENT:
+    - { code: CONTENTS,   label: Personal Property (Coverage C),     kind: limit,      unit: usd }
+    - { code: LOSS_USE,   label: Loss of Use (Coverage D),           kind: limit,      unit: usd }
+    - { code: LIAB,       label: Personal Liability (Coverage E),    kind: limit,      unit: usd }
+    - { code: MEDPAY,     label: Medical Payments (Coverage F),      kind: limit,      unit: usd }
+    - { code: DEDUCT,     label: All-Peril Deductible,               kind: deductible, unit: usd }
+    - { code: REPL_COST,  label: Replacement-Cost Contents,          kind: flag,       unit: bool,      notes: Evergreen default; pays replacement not ACV. }
+
+  UMBR:
+    - { code: LIMIT,      label: Umbrella Liability Limit,           kind: limit,      unit: usd,       notes: Pine $1M / Evergreen $2M / Sequoia $5M. }
+    - { code: SIR,        label: Self-Insured Retention,             kind: deductible, unit: usd,       notes: Applies only to claims not covered by an underlying policy. }
+    - { code: UM_EXCESS,  label: Excess UM/UIM,                      kind: flag,       unit: bool,      notes: Evergreen+ option. }
+
+  PET:
+    - { code: ANNUAL_MAX, label: Annual Benefit Limit,               kind: limit,      unit: usd }
+    - { code: DEDUCT,     label: Annual Deductible,                  kind: deductible, unit: usd }
+    - { code: REIMB_PCT,  label: Reimbursement Percentage,           kind: feature,    unit: pct,       notes: 0.70 / 0.80 / 0.90 by tier. }
+    - { code: WELLNESS,   label: Wellness/Routine Care,              kind: flag,       unit: bool,      notes: Evergreen add-on. }
+    - { code: EXAM_FEE,   label: Exam Fees,                          kind: flag,       unit: bool }
+    - { code: DENTAL,     label: Dental Illness,                     kind: flag,       unit: bool,      notes: Evergreen only. }
+
+  LIFE_T:
+    - { code: FACE,       label: Death Benefit (Face Amount),        kind: limit,      unit: usd }
+    - { code: TERM_LEN,   label: Level Term Length,                  kind: feature,    unit: years,     notes: 10 / 20 / 30 years. }
+    - { code: ADB,        label: Accidental Death Benefit Rider,     kind: flag,       unit: bool }
+    - { code: WAIVER,     label: Waiver of Premium Rider,            kind: flag,       unit: bool }
+    - { code: CHILD_RIDR, label: Child Term Rider,                   kind: flag,       unit: bool }
+    - { code: CONVERT,    label: Conversion Option,                  kind: flag,       unit: bool,      notes: Evergreen+; convert to permanent without re-underwriting. }
+
+  LIFE_W:
+    - { code: FACE,       label: Death Benefit (Face Amount),        kind: limit,      unit: usd }
+    - { code: CASH_VAL,   label: Cash Value Account,                 kind: feature,    unit: bool,      notes: Permanent feature; disclosure required that it is NOT an investment account. }
+    - { code: PUA,        label: Paid-Up Additions Rider,            kind: flag,       unit: bool }
+    - { code: ADB,        label: Accidental Death Benefit Rider,     kind: flag,       unit: bool }
+    - { code: WAIVER,     label: Waiver of Premium Rider,            kind: flag,       unit: bool }
+    - { code: LTC_RIDER,  label: Long-Term Care Rider,               kind: flag,       unit: bool,      notes: Sequoia only. }
+
+  HLTH:
+    - { code: ACCIDENT,   label: Accident Benefit,                   kind: limit,      unit: usd,       notes: Lump sum per covered accident. }
+    - { code: CRIT_ILL,   label: Critical Illness Lump Sum,          kind: limit,      unit: usd }
+    - { code: HOSP_INDEM, label: Hospital Indemnity,                 kind: limit,      unit: usd_daily, notes: Per-day benefit. NOT sellable in WA (not filed). }
+    - { code: ER_BENEFIT, label: Emergency Room Benefit,             kind: limit,      unit: usd }
+    - { code: WELLNESS,   label: Wellness Benefit,                   kind: flag,       unit: bool }
+
+  TRVL:
+    - { code: TRIP_CANCEL, label: Trip Cancellation,                 kind: limit,      unit: usd }
+    - { code: MEDICAL,    label: Emergency Medical,                  kind: limit,      unit: usd }
+    - { code: EVAC,       label: Emergency Evacuation,               kind: limit,      unit: usd }
+    - { code: BAGGAGE,    label: Baggage Loss/Delay,                 kind: limit,      unit: usd }
+    - { code: RENTAL_CAR, label: Rental Car Damage,                  kind: flag,       unit: bool }
+    - { code: CFAR,       label: Cancel For Any Reason,              kind: flag,       unit: bool,      notes: Evergreen only; partial reimbursement, strict eligibility window. }
+
+  # --- AUTO specialty sub-lines (lean coverage sets) ---
+  MOTO:
+    - { code: BI,         label: Bodily Injury Liability,            kind: limit,      unit: usd_split }
+    - { code: PD,         label: Property Damage Liability,          kind: limit,      unit: usd }
+    - { code: COLL,       label: Collision,                          kind: deductible, unit: usd }
+    - { code: COMP,       label: Comprehensive,                      kind: deductible, unit: usd }
+    - { code: CUSTOM_PRT, label: Custom Parts & Equipment,           kind: limit,      unit: usd,       notes: Not available in TX (legacy licensing quirk). }
+
+  RV:
+    - { code: BI,         label: Bodily Injury Liability,            kind: limit,      unit: usd_split }
+    - { code: PD,         label: Property Damage Liability,          kind: limit,      unit: usd }
+    - { code: COLL,       label: Collision,                          kind: deductible, unit: usd }
+    - { code: COMP,       label: Comprehensive,                      kind: deductible, unit: usd }
+    - { code: VAC_LIAB,   label: Vacation Liability,                 kind: limit,      unit: usd,       notes: Liability while parked/camped. }
+
+  BOAT:
+    - { code: HULL,       label: Hull / Physical Damage,             kind: limit,      unit: usd,       notes: Agreed or ACV per tier. }
+    - { code: LIAB,       label: Watercraft Liability,               kind: limit,      unit: usd_split }
+    - { code: COMP,       label: Comprehensive,                      kind: deductible, unit: usd }
+    - { code: WRECK_REMV, label: Wreckage Removal,                   kind: limit,      unit: usd }
+
+  CLSC:
+    - { code: AGREED_VAL, label: Agreed Value,                       kind: limit,      unit: usd,       notes: Fixed payout agreed at bind; no depreciation. }
+    - { code: LIAB,       label: Liability,                          kind: limit,      unit: usd_split }
+    - { code: COMP,       label: Comprehensive,                      kind: deductible, unit: usd }
+    - { code: SPARE_PRTS, label: Spare Parts,                        kind: limit,      unit: usd }

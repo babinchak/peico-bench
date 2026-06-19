@@ -1,0 +1,86 @@
+# Reference: product lines (residential consumer only — no commercial).
+# Maps to docs/01-world-model.md §2 and docs/02-data-model.md `product_lines`.
+#
+# Fields:
+#   line                 short code (PK)
+#   label                display name
+#   category             P&C | LIFE | HEALTH | TRAVEL  (grouping for the website)
+#   parent_line          set for AUTO specialty sub-lines; null otherwise
+#   requires_suitability true for LIFE_* / HLTH (suitability record before bind)
+#   requires_underlying  list of lines one of which must be in-force (UMBR only)
+#   notes
+
+product_lines:
+  # --- Property & Casualty ---
+  - line: AUTO
+    label: Auto
+    category: P&C
+    notes: The flagship. Richest rating, most coverages.
+  - line: HOME
+    label: Homeowners
+    category: P&C
+    notes: Dwelling, structure, contents, liability (HO-3 style).
+  - line: RENT
+    label: Renters
+    category: P&C
+    notes: Contents + liability, no dwelling (HO-4 style).
+  - line: CONDO
+    label: Condo
+    category: P&C
+    notes: HO-6 style; carves around the HOA master policy.
+  - line: UMBR
+    label: Personal Umbrella
+    category: P&C
+    requires_underlying: [AUTO, HOME]
+    notes: Cannot bind without an in-force underlying AUTO or HOME.
+  - line: PET
+    label: Pet
+    category: P&C
+    notes: Accident & illness; fun, low-stakes line.
+
+  # --- Life (suitability-regulated) ---
+  - line: LIFE_T
+    label: Term Life
+    category: LIFE
+    requires_suitability: true
+    notes: Level term; suitability record required before bind.
+  - line: LIFE_W
+    label: Whole Life
+    category: LIFE
+    requires_suitability: true
+    notes: Permanent; builds cash value. Mis-sale risk -> judge-flagged.
+
+  # --- Health (supplemental only — NOT ACA major-medical) ---
+  - line: HLTH
+    label: Supplemental Health
+    category: HEALTH
+    requires_suitability: true
+    notes: Accident / critical-illness / hospital indemnity. Narrow on purpose.
+
+  # --- Travel ---
+  - line: TRVL
+    label: Travel
+    category: TRAVEL
+    notes: Per-trip and annual multi-trip.
+
+  # --- AUTO specialty sub-lines (own coverage quirks) ---
+  - line: MOTO
+    label: Motorcycle
+    category: P&C
+    parent_line: AUTO
+    notes: Some coverages unavailable in TX (legacy licensing quirk).
+  - line: RV
+    label: Recreational Vehicle
+    category: P&C
+    parent_line: AUTO
+    notes: Motorhome / travel-trailer; adds vacation-liability.
+  - line: BOAT
+    label: Boat & Watercraft
+    category: P&C
+    parent_line: AUTO
+    notes: Hull + liability; lay-up season factor.
+  - line: CLSC
+    label: Classic / Collector Auto
+    category: P&C
+    parent_line: AUTO
+    notes: Agreed-value basis; limited mileage.

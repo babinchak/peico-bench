@@ -1,0 +1,85 @@
+# Reference: tiers per line.
+# Maps to docs/01-world-model.md §3 and docs/02-data-model.md `tiers`.
+#
+# Ladder (tree-themed): Sapling(entry) -> Pine(standard) -> Evergreen(preferred)
+#                       -> Sequoia(premium). Not every line uses all four.
+# Grandfathered/retired tiers are sellable:false and carry retired_on; they are
+# LOAD-BEARING QUIRKS (see docs/06-lore-and-quirks.md) — still attached to legacy
+# customers, cannot be re-bound once dropped.
+#
+# tier_id is derived by the build as "<LINE>:<CODE>" (e.g. AUTO:PINE).
+# position: 1..4 along the ladder; 0 for retired/off-ladder tiers.
+
+tiers:
+  AUTO:
+    - { code: SAPLING,  label: Sapling,   position: 1, sellable: true }
+    - { code: PINE,     label: Pine,      position: 2, sellable: true }
+    - { code: EVERGREEN, label: Evergreen, position: 3, sellable: true }
+    - { code: SEQUOIA,  label: Sequoia,   position: 4, sellable: true }
+    - { code: HERITAGE, label: Heritage,  position: 0, sellable: false, retired_on: 2009-07-01,
+        notes: "Retired 2009. Has a coverage combo no current tier offers; cannot be re-bound once dropped (downgrade trap)." }
+
+  HOME:
+    - { code: SAPLING,  label: Sapling,   position: 1, sellable: true }
+    - { code: PINE,     label: Pine,      position: 2, sellable: true }
+    - { code: EVERGREEN, label: Evergreen, position: 3, sellable: true }
+    - { code: SEQUOIA,  label: Sequoia,   position: 4, sellable: true }
+    - { code: EVERGREEN_CLASSIC, label: Evergreen Classic, position: 0, sellable: false, retired_on: 2018-01-01,
+        notes: "Retired 2018. Uses different wind/hail deductible math than current tiers." }
+
+  RENT:
+    - { code: SAPLING,  label: Sapling,   position: 1, sellable: true }
+    - { code: PINE,     label: Pine,      position: 2, sellable: true }
+    - { code: EVERGREEN, label: Evergreen, position: 3, sellable: true }
+
+  CONDO:
+    - { code: SAPLING,  label: Sapling,   position: 1, sellable: true }
+    - { code: PINE,     label: Pine,      position: 2, sellable: true }
+    - { code: EVERGREEN, label: Evergreen, position: 3, sellable: true }
+    - { code: SEQUOIA,  label: Sequoia,   position: 4, sellable: true }
+
+  UMBR:
+    # Tiers map to umbrella limits: Pine=$1M, Evergreen=$2M, Sequoia=$5M.
+    - { code: PINE,     label: Pine,      position: 2, sellable: true }
+    - { code: EVERGREEN, label: Evergreen, position: 3, sellable: true }
+    - { code: SEQUOIA,  label: Sequoia,   position: 4, sellable: true }
+
+  PET:
+    - { code: SAPLING,  label: Sapling,   position: 1, sellable: true }
+    - { code: PINE,     label: Pine,      position: 2, sellable: true }
+    - { code: EVERGREEN, label: Evergreen, position: 3, sellable: true }
+
+  LIFE_T:
+    # Tiers map to face-amount bands and rider richness.
+    - { code: PINE,     label: Pine,      position: 2, sellable: true }
+    - { code: EVERGREEN, label: Evergreen, position: 3, sellable: true }
+    - { code: SEQUOIA,  label: Sequoia,   position: 4, sellable: true }
+
+  LIFE_W:
+    - { code: PINE,     label: Pine,      position: 2, sellable: true }
+    - { code: EVERGREEN, label: Evergreen, position: 3, sellable: true }
+    - { code: SEQUOIA,  label: Sequoia,   position: 4, sellable: true }
+
+  HLTH:
+    - { code: SAPLING,  label: Sapling,   position: 1, sellable: true }
+    - { code: PINE,     label: Pine,      position: 2, sellable: true }
+    - { code: EVERGREEN, label: Evergreen, position: 3, sellable: true }
+
+  TRVL:
+    - { code: SAPLING,  label: Sapling,   position: 1, sellable: true }
+    - { code: PINE,     label: Pine,      position: 2, sellable: true }
+    - { code: EVERGREEN, label: Evergreen, position: 3, sellable: true }
+
+  # --- AUTO specialty sub-lines: two tiers each (kept lean for v1) ---
+  MOTO:
+    - { code: PINE,     label: Pine,      position: 2, sellable: true }
+    - { code: EVERGREEN, label: Evergreen, position: 3, sellable: true }
+  RV:
+    - { code: PINE,     label: Pine,      position: 2, sellable: true }
+    - { code: EVERGREEN, label: Evergreen, position: 3, sellable: true }
+  BOAT:
+    - { code: PINE,     label: Pine,      position: 2, sellable: true }
+    - { code: EVERGREEN, label: Evergreen, position: 3, sellable: true }
+  CLSC:
+    - { code: PINE,     label: Pine,      position: 2, sellable: true }
+    - { code: EVERGREEN, label: Evergreen, position: 3, sellable: true }

@@ -1,0 +1,36 @@
+# Reference: non-promo discounts (multi-line/bundle, loyalty, behavioral).
+# Maps to docs/01-world-model.md §7 and docs/02-data-model.md `discounts`.
+#
+# stack_order is the CANONICAL application order — pricing applies discounts in
+# ASCENDING stack_order. Applying them out of order yields a wrong premium -> the
+# diff fails. (docs/03-rating-engine.md §discounts is the source of truth.)
+#
+# effect.type: PCT_OFF | DOLLARS_OFF
+# eligibility: structured predicate; engine-checked.
+
+discounts:
+  - { discount_id: DISC-SAFEDRIVER, code: SAFE_DRIVER, label: Safe Driver,
+      effect: { type: PCT_OFF, value: 0.12 }, stack_order: 10,
+      eligibility: "line in [AUTO,MOTO] and driver_incidents_5yr == 0" }
+
+  - { discount_id: DISC-MULTILINE, code: MULTILINE, label: Multi-Line (Bundle),
+      effect: { type: PCT_OFF, value: 0.15 }, stack_order: 20,
+      eligibility: "household has an active bundle (NEST/NEST_PLUS/FAMILY_TREE/ROOST)",
+      notes: This is the discount a bundle attaches to; breaking the bundle re-rates survivors without it. }
+
+  - { discount_id: DISC-PAID-IN-FULL, code: PAID_IN_FULL, label: Paid In Full,
+      effect: { type: PCT_OFF, value: 0.07 }, stack_order: 30,
+      eligibility: "billing.plan == PAY_IN_FULL" }
+
+  - { discount_id: DISC-PAPERLESS, code: PAPERLESS, label: Paperless Billing,
+      effect: { type: DOLLARS_OFF, value: 25 }, stack_order: 40,
+      eligibility: "contact.paperless == true" }
+
+  - { discount_id: DISC-AUTOPAY, code: AUTOPAY, label: Automatic Payments,
+      effect: { type: PCT_OFF, value: 0.03 }, stack_order: 50,
+      eligibility: "billing.autopay == true" }
+
+  - { discount_id: DISC-LOYALTY, code: LOYALTY, label: PineRewards Loyalty,
+      effect: { type: PCT_OFF, value: 0.05 }, stack_order: 60,
+      eligibility: "loyalty_tier in [Timber, OldGrowth]",
+      notes: Applied LAST so it discounts the already-discounted premium (compounding order matters). }

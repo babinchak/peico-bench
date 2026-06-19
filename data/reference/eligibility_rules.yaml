@@ -1,0 +1,67 @@
+# Reference: eligibility & rating rules — drives eligible(line,tier,coverage,state,as_of).
+# Maps to docs/01-world-model.md §5 and docs/02-data-model.md `eligibility_rules`.
+#
+# Base case is IMPLICIT ALLOW for any sellable tier/coverage. These rows are the
+# OVERRIDES and GATES. Every DENY / PROHIBIT / REQUIRE names a reason_doc (KB id)
+# that explains it — that is the contract (docs/02 validator rule 6).
+#
+# tier/coverage are codes; the build resolves them to <LINE>:<CODE> ids.
+# effect:
+#   DENY            combination not sellable
+#   REQUIRE         binding requires the named condition first
+#   PROHIBIT_FACTOR rating engine must not use these factors (state law)
+#   GATE            allowed only if condition holds (engine-checked predicate)
+# condition: structured predicate consumed by the engine (free of as_of unless noted)
+
+eligibility_rules:
+
+  # --- Cross-line dependencies ---
+  - { id: ELIG-UMBR-UNDERLYING, line: UMBR, effect: REQUIRE,
+      condition: "in_force_underlying_in [AUTO, HOME]",
+      reason_doc: KB-UMBR-UNDERLYING,
+      notes: Umbrella cannot bind without an in-force underlying auto or home policy. }
+  - { id: ELIG-CONDO-MASTER, line: CONDO, coverage: LOSS_ASSESS, effect: REQUIRE,
+      condition: hoa_master_deductible_present,
+      reason_doc: KB-CONDO-MASTER,
+      notes: Loss-assessment coverage assumes an HOA master policy; its deductible feeds the limit. }
+
+  # --- Suitability gates (life & health) ---
+  - { id: ELIG-LIFE_T-SUIT, line: LIFE_T, effect: REQUIRE, condition: suitability_record_suitable,
+      reason_doc: KB-SUITABILITY, notes: Suitability record required before bind. }
+  - { id: ELIG-LIFE_W-SUIT, line: LIFE_W, effect: REQUIRE, condition: suitability_record_suitable,
+      reason_doc: KB-SUITABILITY, notes: Whole-life mis-sale (short horizon + tight budget) is a judge-flagged failure. }
+  - { id: ELIG-HLTH-SUIT, line: HLTH, effect: REQUIRE, condition: suitability_record_suitable,
+      reason_doc: KB-SUITABILITY }
+
+  # --- Coverage-level gates ---
+  - { id: ELIG-AUTO-GAP-FINANCED, line: AUTO, coverage: GAP, effect: GATE,
+      condition: vehicle_financed,
+      reason_doc: KB-AUTO-GAP, notes: GAP eligible only when the vehicle is financed/leased. }
+  - { id: ELIG-AUTO-OEM-SEQUOIA, line: AUTO, coverage: OEM, tier: SEQUOIA, effect: GATE,
+      condition: tier_is_sequoia,
+      reason_doc: KB-AUTO-TIERS, notes: OEM parts guarantee is Sequoia-only on sellable tiers. }
+  - { id: ELIG-AUTO-MED-EVERGREEN, line: AUTO, coverage: MED, effect: GATE,
+      condition: tier_position_gte_evergreen,
+      reason_doc: KB-AUTO-TIERS, notes: Medical Payments available Evergreen and above. }
+
+  # --- State rules ---
+  - { id: ELIG-WA-HLTH-HOSP, line: HLTH, coverage: HOSP_INDEM, state: WA, effect: DENY,
+      reason_doc: KB-WA-HOSP-INDEM,
+      notes: Hospital-indemnity product not filed in WA -> not sellable. }
+  - { id: ELIG-TX-MOTO-CUSTOM, line: MOTO, coverage: CUSTOM_PRT, state: TX, effect: DENY,
+      reason_doc: KB-TX-MOTO,
+      notes: Custom parts & equipment unavailable in TX (historical licensing quirk). }
+  - { id: ELIG-NY-AUTO-SAPLING, line: AUTO, tier: SAPLING, state: NY, effect: DENY,
+      reason_doc: KB-NE-MIN-LIMITS,
+      notes: NY minimum BI/PD exceeds Sapling limits -> Sapling auto ineligible. }
+  - { id: ELIG-NJ-AUTO-SAPLING, line: AUTO, tier: SAPLING, state: NJ, effect: DENY,
+      reason_doc: KB-NE-MIN-LIMITS,
+      notes: NJ minimum BI/PD exceeds Sapling limits -> Sapling auto ineligible. }
+  - { id: ELIG-FL-HOME-HURRICANE, line: HOME, coverage: WIND_HAIL, state: FL, effect: GATE,
+      condition: separate_hurricane_deductible_set,
+      reason_doc: KB-FL-HURRICANE,
+      notes: FL HOME requires a separate % hurricane deductible (not the flat all-peril one). }
+  - { id: ELIG-CA-AUTO-FACTORS, line: AUTO, state: CA, effect: PROHIBIT_FACTOR,
+      condition: "factors: [credit_insurance_score, gender]",
+      reason_doc: KB-CA-RATING,
+      notes: CA auto rating may not use credit-based insurance score or gender; risk_components credit term is zeroed. }

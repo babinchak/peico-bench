@@ -1,0 +1,37 @@
+# Reference: rating regions + the v1 state subset.
+# Maps to docs/01-world-model.md §5 and docs/02-data-model.md `regions`.
+# 12 states across 5 regions spanning the regulatory spectrum (per design Q1).
+# State-level RULES live in eligibility_rules.yaml; this file is just geography.
+
+regions:
+  - region: R-NE
+    label: Northeast
+    notes: Heavy regulation, mandatory coverages, rate-filing rigor.
+  - region: R-SE
+    label: Southeast
+    notes: Hurricane / wind-hail exposure; FL is its own beast for HOME.
+  - region: R-MW
+    label: Midwest
+    notes: Baseline rating; the reference region.
+  - region: R-SW
+    label: Southwest
+    notes: TX auto quirks; hail exposure.
+  - region: R-W
+    label: West
+    notes: CA bans certain auto rating factors (documented quirk).
+
+states:
+  # state | region | name | notes (regulatory flavor that drives rules elsewhere)
+  - { state: NY, region: R-NE, name: New York,       notes: Higher minimum BI/PD limits than baseline. }
+  - { state: NJ, region: R-NE, name: New Jersey,      notes: Higher minimum BI/PD limits; Sapling auto may be ineligible. }
+  - { state: MA, region: R-NE, name: Massachusetts,   notes: Managed competition history; strict filings. }
+  - { state: FL, region: R-SE, name: Florida,         notes: HOME requires a separate % hurricane deductible. }
+  - { state: GA, region: R-SE, name: Georgia,         notes: Standard SE wind exposure. }
+  - { state: NC, region: R-SE, name: North Carolina,  notes: Coastal wind-hail; rate bureau state. }
+  - { state: IL, region: R-MW, name: Illinois,        notes: Baseline rating reference. }
+  - { state: OH, region: R-MW, name: Ohio,            notes: Baseline rating reference. }
+  - { state: MI, region: R-MW, name: Michigan,        notes: Historically unique auto (PIP); baseline here for v1. }
+  - { state: TX, region: R-SW, name: Texas,           notes: Some MOTO coverages unavailable (legacy licensing quirk). }
+  - { state: AZ, region: R-SW, name: Arizona,         notes: Hail exposure; otherwise baseline. }
+  - { state: CA, region: R-W,  name: California,      notes: No credit-based insurance score; gender prohibited in auto rating. }
+  - { state: WA, region: R-W,  name: Washington,      notes: HLTH hospital-indemnity product not filed -> not sellable. }

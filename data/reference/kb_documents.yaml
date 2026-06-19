@@ -1,0 +1,165 @@
+# Reference: knowledge-base documents (the policy wiki).
+# Maps to docs/02-data-model.md `kb_documents`. Every eligibility_rules.reason_doc,
+# every promotions.doc_id, every retired tier and cryptic code resolves to a row here.
+# This table is the antidote to "memorize trivia" — the agent reads it via search_kb/get_doc.
+#
+# category: POLICY | UNDERWRITING | PROMO | COMPLIANCE | HOWTO | GLOSSARY
+# applies_to: { lines: [...], states: [...] }  (ALL allowed)
+# body_md kept short for v1; expand with AI-drafted prose later (docs/04 §AI-generated).
+
+kb_documents:
+  # --- Glossary / decoding cryptic EVERGREEN codes ---
+  - doc_id: KB-GLOSSARY-AUTO
+    title: "Auto coverage codes, decoded"
+    category: GLOSSARY
+    applies_to: { lines: [AUTO, MOTO, RV, BOAT, CLSC] }
+    body_md: |
+      EVERGREEN stores auto coverages under terse codes. Plain-language meanings:
+      - **BI** — Bodily Injury liability (per-person / per-accident).
+      - **PD** — Property Damage liability.
+      - **UM/UIM** (`UMUIM`) — Uninsured / Underinsured Motorist.
+      - **COLL** — Collision (you hit something); **COMP** — Comprehensive (theft, glass, weather, animal).
+      - **MED** — Medical Payments; **RENT_REIMB** — rental reimbursement while your car is in the shop.
+      - **ROAD** — roadside assistance; **GAP** — pays loan/lease balance above the car's value; **OEM** — original-manufacturer parts guarantee.
+
+  # --- Tiers & retired tiers ---
+  - doc_id: KB-AUTO-TIERS
+    title: "Auto tiers: Sapling → Pine → Evergreen → Sequoia"
+    category: POLICY
+    applies_to: { lines: [AUTO] }
+    body_md: |
+      Tiers bundle coverages. Higher tiers raise liability limits, lower deductibles,
+      and add coverages: **MED** and **RENT_REIMB** appear at Evergreen and above;
+      **OEM** is Sequoia-only; **ROAD** is included at Sequoia (an add-on below it).
+
+  - doc_id: KB-HERITAGE
+    title: "Heritage tier (retired 2009) — do not drop without disclosure"
+    category: UNDERWRITING
+    applies_to: { lines: [AUTO] }
+    body_md: |
+      Heritage was retired on 2009-07-01 and cannot be sold or re-bound. It carries a
+      coverage combination no current tier offers (Sequoia-level MED/RENT_REIMB/ROAD/OEM
+      on a mid liability base). A customer who drops Heritage **loses that combination
+      permanently**. Disclose the downgrade trap before any tier change off Heritage.
+
+  - doc_id: KB-EVERGREEN-CLASSIC
+    title: "Evergreen Classic (Home, retired 2018) — wind/hail math"
+    category: UNDERWRITING
+    applies_to: { lines: [HOME] }
+    body_md: |
+      Retired 2018-01-01. Uses a legacy flat-capped wind/hail deductible (1.5% of
+      dwelling, capped) rather than the current percentage math. Not re-bindable.
+
+  # --- Eligibility reason docs ---
+  - doc_id: KB-UMBR-UNDERLYING
+    title: "Umbrella requires an underlying policy"
+    category: UNDERWRITING
+    applies_to: { lines: [UMBR] }
+    body_md: |
+      A Personal Umbrella cannot be bound unless the household has an in-force underlying
+      **AUTO or HOME** policy meeting minimum liability limits. Cancelling the last
+      qualifying underlying policy puts the umbrella out of compliance.
+
+  - doc_id: KB-CONDO-MASTER
+    title: "Condo loss assessment & the HOA master policy"
+    category: POLICY
+    applies_to: { lines: [CONDO] }
+    body_md: |
+      Loss Assessment coverage responds to charges levied by the HOA. Its adequacy
+      depends on the **master-policy deductible**; record that deductible so the limit
+      is set correctly.
+
+  - doc_id: KB-SUITABILITY
+    title: "Suitability requirement for Life & Health"
+    category: COMPLIANCE
+    applies_to: { lines: [LIFE_T, LIFE_W, HLTH] }
+    body_md: |
+      Before binding any Life or Supplemental Health policy you must complete a
+      **suitability record** (income, existing coverage, dependents, stated need,
+      horizon, risk tolerance) with outcome SUITABLE. Selling **whole life** to a
+      short-horizon, tight-budget customer is a mis-sale. Required disclosures: free-look
+      period, surrender charges, and that whole life is **not an investment account**.
+
+  - doc_id: KB-AUTO-GAP
+    title: "GAP coverage eligibility"
+    category: UNDERWRITING
+    applies_to: { lines: [AUTO] }
+    body_md: |
+      Loan/Lease GAP is available only on **financed or leased** vehicles. It cannot be
+      added to a vehicle owned outright.
+
+  - doc_id: KB-WA-HOSP-INDEM
+    title: "WA: hospital indemnity not available"
+    category: COMPLIANCE
+    applies_to: { lines: [HLTH], states: [WA] }
+    body_md: |
+      PEICO's hospital-indemnity benefit is **not filed in Washington** and may not be
+      sold there. Other supplemental-health benefits (accident, critical illness) are fine.
+
+  - doc_id: KB-TX-MOTO
+    title: "TX: motorcycle custom-parts coverage unavailable"
+    category: UNDERWRITING
+    applies_to: { lines: [MOTO], states: [TX] }
+    body_md: |
+      Due to a historical licensing limitation, Custom Parts & Equipment coverage is
+      **not available on motorcycle policies in Texas**.
+
+  - doc_id: KB-NE-MIN-LIMITS
+    title: "NY/NJ minimum auto liability limits"
+    category: COMPLIANCE
+    applies_to: { lines: [AUTO], states: [NY, NJ] }
+    body_md: |
+      New York and New Jersey mandate minimum BI/PD limits above the Sapling tier's
+      limits, so **Sapling auto is not sellable** in those states — quote Pine or higher.
+
+  - doc_id: KB-FL-HURRICANE
+    title: "FL: separate hurricane deductible"
+    category: COMPLIANCE
+    applies_to: { lines: [HOME], states: [FL] }
+    body_md: |
+      Florida homeowners policies carry a **separate hurricane deductible** expressed as
+      a percentage of the dwelling limit, distinct from the flat all-peril deductible.
+      It must be set explicitly before binding.
+
+  - doc_id: KB-CA-RATING
+    title: "CA: prohibited auto rating factors"
+    category: COMPLIANCE
+    applies_to: { lines: [AUTO], states: [CA] }
+    body_md: |
+      California auto rating **may not use credit-based insurance score or gender**. The
+      credit component of `peico_risk` is zeroed for CA risks; the rating engine branches
+      on state accordingly.
+
+  # --- Promo terms ---
+  - doc_id: KB-PROMO-WELCOME15
+    title: "WELCOME15 terms"
+    category: PROMO
+    applies_to: { lines: ALL }
+    body_md: "15% off a NEW customer's FIRST policy. Cap $300; min premium $200. Not for existing customers or second policies."
+  - doc_id: KB-PROMO-PINEBUNDLE
+    title: "PINEBUNDLE terms"
+    category: PROMO
+    applies_to: { lines: [AUTO, HOME] }
+    body_md: "10% off when the household has >=2 active lines. Cap $500; min premium $250. Stacks with the multi-line discount."
+  - doc_id: KB-PROMO-SPRINGSAVE25
+    title: "SPRINGSAVE25 terms"
+    category: PROMO
+    applies_to: { lines: [AUTO] }
+    body_md: "$75 off auto in the Midwest/Southwest, spring 2025 only. Expired — does not apply after 2025-06-21."
+  - doc_id: KB-PROMO-PETLOVE
+    title: "PETLOVE terms"
+    category: PROMO
+    applies_to: { lines: [PET] }
+    body_md: "20% off pet policies during October 2025 adoption month. Cap $60."
+  - doc_id: KB-PROMO-GREENSTART
+    title: "GREENSTART — retired rider ($0)"
+    category: PROMO
+    applies_to: { lines: [AUTO, HOME] }
+    body_md: |
+      GREENSTART still validates as a code, but its underlying **rate rider was retired**,
+      so it produces a **$0 benefit**. Do not promise customers a discount from it.
+  - doc_id: KB-PROMO-COASTALSHIELD
+    title: "COASTALSHIELD terms"
+    category: PROMO
+    applies_to: { lines: [HOME, CONDO], states: [FL, GA, NC] }
+    body_md: "$120 wind-resilience credit for Southeast home/condo policies. Cap $120; min premium $600."
