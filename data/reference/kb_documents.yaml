@@ -130,6 +130,47 @@ kb_documents:
       credit component of `peico_risk` is zeroed for CA risks; the rating engine branches
       on state accordingly.
 
+  # --- Disclosure language (referenced by required_disclosures) ---
+  - doc_id: KB-DISC-FREELOOK
+    title: "Free-look period"
+    category: COMPLIANCE
+    applies_to: { lines: [LIFE_T, LIFE_W, HLTH] }
+    body_md: |
+      The customer may cancel within the **free-look period** (30 days for life, 10 days
+      for supplemental health) after policy delivery for a full refund of premium paid.
+      The period and refund right must be disclosed at bind and recorded.
+
+  - doc_id: KB-DISC-WHOLE-LIFE
+    title: "Whole life disclosures: surrender, cash value, not an investment"
+    category: COMPLIANCE
+    applies_to: { lines: [LIFE_W] }
+    body_md: |
+      Before binding whole life, disclose and record: (1) **surrender charges** apply for
+      the first several policy years and reduce early cash value; (2) cash value accrues
+      slowly and may be borrowed against, reducing the death benefit; (3) whole life is
+      **insurance, not an investment account** — do not present projected cash value as a
+      savings/return vehicle. Selling whole life to a short-horizon, tight-budget customer
+      is a mis-sale even with these disclosures present.
+
+  - doc_id: KB-DISC-HLTH-SUPP
+    title: "Supplemental health: not major-medical; pre-existing limits"
+    category: COMPLIANCE
+    applies_to: { lines: [HLTH] }
+    body_md: |
+      Disclose and record that this is **supplemental** coverage (accident / critical
+      illness / hospital indemnity) and **NOT ACA major-medical** — it does not satisfy a
+      coverage mandate and does not replace health insurance. Pre-existing condition
+      limitations apply for a defined look-back period.
+
+  - doc_id: KB-DISC-UMUIM
+    title: "UM/UIM selection or rejection"
+    category: COMPLIANCE
+    applies_to: { lines: [AUTO] }
+    body_md: |
+      The customer must affirmatively **select or reject** Uninsured/Underinsured Motorist
+      coverage; the choice (and limits, if selected) is disclosed and recorded at bind.
+      Some states mandate UM/UIM at or above the BI limit.
+
   # --- Promo terms ---
   - doc_id: KB-PROMO-WELCOME15
     title: "WELCOME15 terms"

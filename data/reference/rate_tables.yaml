@@ -1,0 +1,140 @@
+# Reference: rate tables — base rates + factor curves per line, versioned.
+# Maps to docs/02-data-model.md `rate_tables` and docs/03-rating-engine.md.
+#
+# Versioning is why pricing is reproducible across dates: the engine selects the
+# rate_table whose [effective.start, effective.end) contains as_of.
+#
+# The build EXPANDS each `lines:` payload across the 5 regions, baking in a
+# region_factor (region_multipliers, overridden by region_line_overrides). Lines
+# flagged region_invariant get region_factor = 1.0 (life rates are by age/health,
+# not territory). rate_table_id = "<LINE>:<REGION>:<VERSION>".
+#
+# UNITS NOTE: payload money is authored & stored in DOLLARS (the payload is an
+# opaque blob behind quote(); the rating engine converts to integer CENTS when it
+# computes the stored premium). Factor curves are dimensionless multipliers.
+# Factor curve form: [{max: <upper bound inclusive>, f: <factor>}, ...] — first
+# bucket whose `max` >= input wins. Categorical factors are {KEY: factor} maps.
+
+meta:
+  version: "2025.1"
+  effective: { start: 2025-01-01, end: 2026-12-31 }
+  money_unit: usd
+
+region_multipliers:
+  R-NE: 1.20
+  R-SE: 1.15
+  R-MW: 1.00          # reference region
+  R-SW: 1.05
+  R-W:  1.10
+
+# Per-(region, line) overrides REPLACE the plain region multiplier for that cell.
+region_line_overrides:
+  R-NE: { AUTO: 1.30 }
+  R-SE: { AUTO: 1.10, HOME: 1.45, CONDO: 1.30 }   # hurricane/wind load
+  R-SW: { AUTO: 1.12, HOME: 1.10 }                # hail
+  R-W:  { AUTO: 1.25, HOME: 1.15 }                # CA/WA severity
+
+region_invariant_lines: [LIFE_T, LIFE_W]
+
+lines:
+
+  AUTO:
+    unit: per_vehicle
+    base_rate: 900                 # annual, Pine, reference region, pre-factor
+    tier_factors: { SAPLING: 0.82, PINE: 1.00, EVERGREEN: 1.28, SEQUOIA: 1.65, HERITAGE: 1.35 }
+    factors:
+      driver_age:    [{max: 20, f: 1.85}, {max: 25, f: 1.45}, {max: 35, f: 1.05}, {max: 65, f: 1.00}, {max: 999, f: 1.18}]
+      risk_score:    [{max: 579, f: 1.55}, {max: 669, f: 1.22}, {max: 739, f: 1.00}, {max: 850, f: 0.84}]
+      annual_miles:  [{max: 7500, f: 0.92}, {max: 15000, f: 1.00}, {max: 999999, f: 1.20}]
+      vehicle_age:   [{max: 3, f: 1.10}, {max: 10, f: 1.00}, {max: 99, f: 0.92}]
+      incidents_5yr: [{max: 0, f: 0.95}, {max: 1, f: 1.20}, {max: 2, f: 1.55}, {max: 99, f: 2.10}]
+    coverage_premiums:             # additive annual premium when the coverage is present
+      UMUIM: 110
+      MED: 45
+      RENT_REIMB: 30
+      ROAD: 25
+      GAP: 60
+      OEM: 40
+    prohibited_factors_by_state:
+      CA: [risk_credit_component, gender]   # zeroed at rate time (see KB-CA-RATING)
+
+  HOME:
+    unit: per_dwelling
+    rate_per_1000: 4.20            # annual per $1000 of dwelling replacement cost
+    tier_factors: { SAPLING: 0.85, PINE: 1.00, EVERGREEN: 1.22, SEQUOIA: 1.55, EVERGREEN_CLASSIC: 1.20 }
+    factors:
+      roof_age:        [{max: 5, f: 0.92}, {max: 15, f: 1.00}, {max: 25, f: 1.25}, {max: 99, f: 1.60}]
+      construction:    { FRAME: 1.10, MASONRY: 0.95, FIRE_RESIST: 0.85 }
+      protection_class: [{max: 3, f: 0.90}, {max: 6, f: 1.00}, {max: 9, f: 1.20}, {max: 10, f: 1.45}]
+      dist_to_coast_mi: [{max: 1, f: 1.45}, {max: 5, f: 1.20}, {max: 25, f: 1.05}, {max: 99999, f: 1.00}]
+      risk_score:      [{max: 579, f: 1.40}, {max: 669, f: 1.15}, {max: 739, f: 1.00}, {max: 850, f: 0.88}]
+    coverage_premiums: { WATER_BACK: 55, SERVICE_LN: 30 }
+    wind_hail_deductible_credit: { "0.01": 1.00, "0.02": 0.96, "0.05": 0.90 }
+
+  RENT:
+    unit: per_policy
+    base_rate: 140
+    tier_factors: { SAPLING: 0.85, PINE: 1.00, EVERGREEN: 1.25 }
+    factors:
+      risk_score:        [{max: 579, f: 1.30}, {max: 669, f: 1.10}, {max: 739, f: 1.00}, {max: 850, f: 0.92}]
+      contents_per_1000: [{max: 15000, f: 1.00}, {max: 30000, f: 1.10}, {max: 50000, f: 1.22}, {max: 999999, f: 1.40}]
+    coverage_premiums: { REPL_COST: 20 }
+
+  CONDO:
+    unit: per_policy
+    base_rate: 260
+    tier_factors: { SAPLING: 0.85, PINE: 1.00, EVERGREEN: 1.22, SEQUOIA: 1.50 }
+    factors:
+      risk_score:       [{max: 579, f: 1.35}, {max: 669, f: 1.12}, {max: 739, f: 1.00}, {max: 850, f: 0.90}]
+      dist_to_coast_mi: [{max: 1, f: 1.30}, {max: 5, f: 1.12}, {max: 25, f: 1.03}, {max: 99999, f: 1.00}]
+    coverage_premiums: { WATER_BACK: 45 }
+
+  UMBR:
+    unit: per_policy
+    base_rate: 180                 # $1M (Pine)
+    tier_factors: { PINE: 1.00, EVERGREEN: 1.55, SEQUOIA: 2.60 }   # by limit ($1M/$2M/$5M)
+    factors:
+      underlying_units: [{max: 1, f: 1.00}, {max: 3, f: 1.20}, {max: 99, f: 1.45}]   # cars+homes
+      risk_score:       [{max: 579, f: 1.30}, {max: 669, f: 1.10}, {max: 739, f: 1.00}, {max: 850, f: 0.92}]
+    coverage_premiums: { UM_EXCESS: 35 }
+
+  PET:
+    unit: per_pet
+    base_rate: 240
+    tier_factors: { SAPLING: 0.70, PINE: 1.00, EVERGREEN: 1.45 }
+    factors:
+      species:       { DOG: 1.10, CAT: 0.85 }
+      pet_age:       [{max: 2, f: 0.85}, {max: 7, f: 1.00}, {max: 99, f: 1.60}]
+      reimburse_pct: { "0.70": 0.90, "0.80": 1.00, "0.90": 1.18 }
+    coverage_premiums: { WELLNESS: 120, EXAM_FEE: 25, DENTAL: 60 }
+
+  HLTH:
+    unit: per_policy
+    base_rate: 180
+    tier_factors: { SAPLING: 0.80, PINE: 1.00, EVERGREEN: 1.50 }
+    factors:
+      age: [{max: 40, f: 1.00}, {max: 55, f: 1.30}, {max: 99, f: 1.80}]
+    coverage_premiums: { HOSP_INDEM: 90, CRIT_ILL: 70, WELLNESS: 30 }
+
+  TRVL:
+    unit: per_trip
+    rate_pct_of_trip_cost: 0.055   # base premium as a fraction of insured trip cost
+    tier_factors: { SAPLING: 0.80, PINE: 1.00, EVERGREEN: 1.40 }
+    factors:
+      traveler_age: [{max: 35, f: 1.00}, {max: 60, f: 1.30}, {max: 75, f: 1.90}, {max: 99, f: 2.80}]
+    coverage_premiums: { RENTAL_CAR: 12 }
+
+  LIFE_T:
+    unit: per_1000_face
+    region_invariant: true
+    rate_per_1000_by_age: [{max: 30, f: 0.9}, {max: 40, f: 1.2}, {max: 50, f: 2.6}, {max: 60, f: 6.5}, {max: 99, f: 16.0}]
+    term_factors: { "10": 0.80, "20": 1.00, "30": 1.35 }
+    smoker_factor: 2.2
+    rider_premiums: { ADB: 60, WAIVER: 45, CHILD_RIDR: 50, CONVERT: 0 }
+
+  LIFE_W:
+    unit: per_1000_face
+    region_invariant: true
+    rate_per_1000_by_age: [{max: 30, f: 9.0}, {max: 40, f: 13.0}, {max: 50, f: 20.0}, {max: 60, f: 31.0}, {max: 99, f: 52.0}]
+    smoker_factor: 1.8
+    rider_premiums: { PUA: 0, ADB: 70, WAIVER: 55, LTC_RIDER: 220 }

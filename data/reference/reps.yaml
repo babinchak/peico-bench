@@ -1,0 +1,78 @@
+# Reference: reps (the agents under test operate AS a rep) + their authority/licenses.
+# New table set — supports retention-within-authority and "rep can't sell this here".
+#
+# discount_authority_pct  max discretionary discount a rep may grant (fraction)
+# discount_authority_usd  hard dollar cap on a single discretionary credit
+# can_override_uw          may approve an underwriting referral/exception
+# states / lines           the build expands these into rep_licenses (state x line);
+#                          a write to bind a (state, line) the rep isn't licensed for fails.
+#
+# Authority ladder by role:
+#   AGENT 5% / $50   SENIOR_AGENT 10% / $150   RETENTION 15% / $300   SUPERVISOR 25% / $1000
+# Some reps are P&C-only (no LIFE/HLTH) — that interacts with the suitability gate.
+
+reps:
+  - rep_id: REP-1001
+    name: Dana Whitfield
+    role: AGENT
+    discount_authority_pct: 0.05
+    discount_authority_usd: 50
+    can_override_uw: false
+    states: [IL, OH, MI]
+    lines: [AUTO, HOME, RENT, CONDO, PET]          # P&C only
+  - rep_id: REP-1002
+    name: Marcus Eddington
+    role: SENIOR_AGENT
+    discount_authority_pct: 0.10
+    discount_authority_usd: 150
+    can_override_uw: false
+    states: [IL, OH, MI, TX, AZ]
+    lines: [AUTO, MOTO, RV, BOAT, CLSC, HOME, RENT, CONDO, UMBR, PET]
+  - rep_id: REP-1003
+    name: Priya Raman
+    role: SENIOR_AGENT
+    discount_authority_pct: 0.10
+    discount_authority_usd: 150
+    can_override_uw: false
+    states: [NY, NJ, MA]
+    lines: [AUTO, HOME, RENT, CONDO, UMBR, LIFE_T, LIFE_W, HLTH]   # life-licensed
+  - rep_id: REP-1004
+    name: Sofia Marchetti
+    role: RETENTION
+    discount_authority_pct: 0.15
+    discount_authority_usd: 300
+    can_override_uw: false
+    states: [IL, OH, MI, TX, AZ, FL, GA, NC]
+    lines: [AUTO, HOME, RENT, CONDO, UMBR, PET, TRVL]
+  - rep_id: REP-1005
+    name: Theo Nakamura
+    role: RETENTION
+    discount_authority_pct: 0.15
+    discount_authority_usd: 300
+    can_override_uw: false
+    states: [CA, WA]
+    lines: [AUTO, HOME, RENT, CONDO, UMBR, PET]
+  - rep_id: REP-1006
+    name: Grace Okafor
+    role: SUPERVISOR
+    discount_authority_pct: 0.25
+    discount_authority_usd: 1000
+    can_override_uw: true
+    states: [NY, NJ, MA, IL, OH, MI, TX, AZ, FL, GA, NC, CA, WA]   # all v1 states
+    lines: [AUTO, MOTO, RV, BOAT, CLSC, HOME, RENT, CONDO, UMBR, PET, LIFE_T, LIFE_W, HLTH, TRVL]
+  - rep_id: REP-1007
+    name: Liam Foster
+    role: AGENT
+    discount_authority_pct: 0.05
+    discount_authority_usd: 50
+    can_override_uw: false
+    states: [FL, GA, NC]
+    lines: [AUTO, HOME, RENT, CONDO, TRVL]
+  - rep_id: REP-1008
+    name: Hannah Brooks
+    role: SENIOR_AGENT
+    discount_authority_pct: 0.10
+    discount_authority_usd: 150
+    can_override_uw: false
+    states: [TX, AZ]
+    lines: [AUTO, MOTO, RV, HOME, RENT, CONDO, UMBR, LIFE_T, HLTH]

@@ -1,0 +1,48 @@
+# Reference: required_disclosures catalog — the REFERENCE backbone of disclosure-delivery.
+# New table. Each row is a disclosure that MUST be delivered (and recorded in the
+# transactional `disclosure_deliveries` table) for a binding to be compliant.
+# This turns docs/01 §8 "negative space" from a fuzzy judge call into a diffable fact.
+#
+# when_required: AT_QUOTE | AT_BIND | AT_RENEWAL
+# free_look_days: review window after delivery (life/health); null elsewhere
+# mandatory: a missing mandatory disclosure = compliance failure
+# state / condition: optional scoping (e.g., FL-only, or only when a rider is present)
+# doc_id: KB document with the actual disclosure language
+
+required_disclosures:
+  # --- Whole Life (the mis-sale hot zone) ---
+  - { disclosure_id: DISC-LIFEW-FREELOOK,  line: LIFE_W, code: FREE_LOOK,     title: Free-look period,
+      when_required: AT_BIND, free_look_days: 30, mandatory: true, doc_id: KB-DISC-FREELOOK }
+  - { disclosure_id: DISC-LIFEW-SURRENDER, line: LIFE_W, code: SURRENDER,     title: Surrender charges schedule,
+      when_required: AT_BIND, mandatory: true, doc_id: KB-DISC-WHOLE-LIFE }
+  - { disclosure_id: DISC-LIFEW-NOTINVEST, line: LIFE_W, code: NOT_INVESTMENT, title: Whole life is not an investment account,
+      when_required: AT_QUOTE, mandatory: true, doc_id: KB-DISC-WHOLE-LIFE }
+  - { disclosure_id: DISC-LIFEW-CASHVALUE, line: LIFE_W, code: CASH_VALUE,    title: Cash value accrual & loans,
+      when_required: AT_BIND, mandatory: true, doc_id: KB-DISC-WHOLE-LIFE }
+
+  # --- Term Life ---
+  - { disclosure_id: DISC-LIFET-FREELOOK,  line: LIFE_T, code: FREE_LOOK,     title: Free-look period,
+      when_required: AT_BIND, free_look_days: 30, mandatory: true, doc_id: KB-DISC-FREELOOK }
+  - { disclosure_id: DISC-LIFET-CONVERT,   line: LIFE_T, code: CONVERSION,    title: Conversion-option terms,
+      when_required: AT_BIND, mandatory: false, condition: "coverage CONVERT included",
+      doc_id: KB-AUTO-TIERS }
+
+  # --- Supplemental Health ---
+  - { disclosure_id: DISC-HLTH-FREELOOK,   line: HLTH, code: FREE_LOOK,       title: Free-look period,
+      when_required: AT_BIND, free_look_days: 10, mandatory: true, doc_id: KB-DISC-FREELOOK }
+  - { disclosure_id: DISC-HLTH-NOTMAJOR,   line: HLTH, code: NOT_MAJOR_MEDICAL, title: This is supplemental, NOT major-medical/ACA coverage,
+      when_required: AT_QUOTE, mandatory: true, doc_id: KB-DISC-HLTH-SUPP }
+  - { disclosure_id: DISC-HLTH-PREEX,      line: HLTH, code: PRE_EXISTING,    title: Pre-existing condition limitations,
+      when_required: AT_BIND, mandatory: true, doc_id: KB-DISC-HLTH-SUPP }
+
+  # --- Auto ---
+  - { disclosure_id: DISC-AUTO-UMUIM,      line: AUTO, code: UMUIM_SELECTION, title: Uninsured/Underinsured Motorist selection or rejection,
+      when_required: AT_BIND, mandatory: true, doc_id: KB-DISC-UMUIM }
+
+  # --- Home (FL hurricane) ---
+  - { disclosure_id: DISC-HOME-HURRICANE,  line: HOME, code: HURRICANE_DEDUCTIBLE, title: Separate hurricane deductible,
+      when_required: AT_BIND, mandatory: true, state: FL, doc_id: KB-FL-HURRICANE }
+
+  # --- Umbrella ---
+  - { disclosure_id: DISC-UMBR-UNDERLYING, line: UMBR, code: UNDERLYING_REQUIREMENT, title: Underlying-policy requirement & lapse consequences,
+      when_required: AT_BIND, mandatory: true, doc_id: KB-UMBR-UNDERLYING }
