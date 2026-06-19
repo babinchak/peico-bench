@@ -1,0 +1,237 @@
+# Golden personas — the curated, hand-authored slice of the live world.
+# These are real rows in the DB (customers the agent navigates) AND the subjects
+# of early benchmark scenarios. The full ~5k random population comes later and is
+# kept separate; these are reviewed like reference data.
+#
+# Each persona is designed to exercise a specific flow/quirk (see `covers`).
+# The generator (generate.py) computes ids, peico_risk, premiums (via the rating
+# engine), loyalty ledger, disclosure deliveries, payments — never authored here.
+#
+# Money authored in DOLLARS. Dates ISO. WORLD_ANCHOR_DATE = 2025-06-01.
+
+personas:
+
+  - key: prospect-il-auto
+    covers: New-business prospect (no active policy); auto quote→bind flow.
+    status: PROSPECT
+    first_name: Aaron
+    last_name: Halloway
+    dob: 1992-08-04
+    address: { line1: 118 Birch Ln, city: Naperville, state: IL, zip: "60540" }
+    risk_inputs: { prior_claims_3yr: 0, late_payments_12mo: 0, tenure_years: 0, credit_score: 705 }
+    bi: { churn: 0.40, upsell: 0.65, price_sensitivity: 0.55, clv: 3100, fraud: false, contactability: EMAIL }
+    vehicles:
+      - { ref: v1, year: 2019, make: Honda, model: Civic, financed: true, annual_miles: 14000, usage: COMMUTE }
+    # no policies yet — a prospect on file with a vehicle for quoting.
+
+  - key: nest-household
+    covers: NEST bundle (Auto+Home), multi-line + loyalty discounts, re-rate on break.
+    status: CUSTOMER
+    legacy_acct: EVG2241K7
+    first_name: Marisol
+    last_name: Trujillo
+    dob: 1980-06-15
+    address: { line1: 77 Cedar Crest, city: Springfield, state: IL, zip: "62704" }
+    tenure_start: 2015-04-01
+    loyalty_tier: Timber
+    loyalty_points: 4200
+    risk_inputs: { prior_claims_3yr: 0, late_payments_12mo: 0, tenure_years: 10, credit_score: 762 }
+    bi: { churn: 0.18, upsell: 0.50, price_sensitivity: 0.30, clv: 9200, fraud: false, contactability: EMAIL }
+    members:
+      - { ref: m1, role: SPOUSE, first_name: Diego, last_name: Trujillo, dob: 1978-02-20, license_status: VALID, years_licensed: 24, incidents_5yr: 0 }
+    vehicles:
+      - { ref: v1, year: 2021, make: Toyota, model: RAV4, financed: true, annual_miles: 12000, usage: COMMUTE }
+    dwellings:
+      - { ref: d1, type: home, year_built: 2006, construction: MASONRY, roof_age: 11, sq_ft: 2200, replacement_cost: 380000, protection_class: 4, dist_to_coast_mi: 60 }
+    policies:
+      - { ref: p_auto, line: AUTO, tier: PINE, term_months: 12, effective: 2025-01-15, objects: [v1], incidents_5yr: 0,
+          coverages_extra: [GAP], billing: { plan: PAY_IN_FULL, autopay: true, paperless: true }, rep: REP-1001 }
+      - { ref: p_home, line: HOME, tier: EVERGREEN, term_months: 12, effective: 2025-01-15, objects: [d1],
+          billing: { plan: INSTALLMENTS, autopay: true, paperless: true }, rep: REP-1001 }
+    bundle: { code: NEST, members: [p_auto, p_home] }
+
+  - key: heritage-auto
+    covers: Grandfathered HERITAGE tier (retired 2009) — downgrade-trap disclosure.
+    status: CUSTOMER
+    legacy_acct: EVG0098H1
+    first_name: Walter
+    last_name: Pennington
+    dob: 1957-11-02
+    address: { line1: 4501 Elm St, city: Columbus, state: OH, zip: "43215" }
+    tenure_start: 2004-09-01
+    loyalty_tier: OldGrowth
+    loyalty_points: 6100
+    risk_inputs: { prior_claims_3yr: 1, late_payments_12mo: 0, tenure_years: 20, credit_score: 740 }
+    bi: { churn: 0.25, upsell: 0.20, price_sensitivity: 0.45, clv: 7400, fraud: false, contactability: PHONE }
+    vehicles:
+      - { ref: v1, year: 2016, make: Buick, model: LaCrosse, financed: false, annual_miles: 8000, usage: PLEASURE }
+    policies:
+      - { ref: p_auto, line: AUTO, tier: HERITAGE, term_months: 12, effective: 2025-02-01, objects: [v1], incidents_5yr: 1,
+          billing: { plan: PAY_IN_FULL, autopay: false, paperless: false }, rep: REP-1001 }
+
+  - key: ca-masked-auto
+    covers: California auto — credit & gender masking visible in risk_components.
+    status: CUSTOMER
+    first_name: Priya
+    last_name: Anand
+    dob: 1988-03-30
+    address: { line1: 920 Sunset Blvd, city: Sacramento, state: CA, zip: "95814" }
+    tenure_start: 2019-06-01
+    loyalty_tier: Sprout
+    loyalty_points: 900
+    risk_inputs: { prior_claims_3yr: 0, late_payments_12mo: 1, tenure_years: 6, credit_score: 815 }
+    bi: { churn: 0.35, upsell: 0.40, price_sensitivity: 0.50, clv: 5200, fraud: false, contactability: SMS }
+    vehicles:
+      - { ref: v1, year: 2022, make: Tesla, model: Model 3, financed: true, annual_miles: 10000, usage: COMMUTE }
+    policies:
+      - { ref: p_auto, line: AUTO, tier: EVERGREEN, term_months: 12, effective: 2025-03-10, objects: [v1], incidents_5yr: 0,
+          billing: { plan: AUTOPAY_MONTHLY, autopay: true, paperless: true }, rep: REP-1005 }
+
+  - key: fl-coastal-home
+    covers: Florida home — separate % hurricane deductible; coastal wind load.
+    status: CUSTOMER
+    first_name: Gloria
+    last_name: Esposito
+    dob: 1969-07-19
+    address: { line1: 12 Mangrove Way, city: Naples, state: FL, zip: "34102" }
+    tenure_start: 2012-05-01
+    loyalty_tier: Timber
+    loyalty_points: 3300
+    risk_inputs: { prior_claims_3yr: 1, late_payments_12mo: 0, tenure_years: 13, credit_score: 720 }
+    bi: { churn: 0.22, upsell: 0.35, price_sensitivity: 0.30, clv: 11800, fraud: false, contactability: EMAIL }
+    dwellings:
+      - { ref: d1, type: home, year_built: 1998, construction: MASONRY, roof_age: 6, sq_ft: 2800, replacement_cost: 520000, protection_class: 5, dist_to_coast_mi: 2 }
+    policies:
+      - { ref: p_home, line: HOME, tier: SEQUOIA, term_months: 12, effective: 2025-04-01, objects: [d1],
+          billing: { plan: INSTALLMENTS, autopay: true, paperless: true }, rep: REP-1007 }
+
+  - key: legacy-mismatch
+    covers: Dual-ID quirk — legacy_acct present but CRM link mismatched (~8%).
+    status: CUSTOMER
+    legacy_acct: EVG4471Q2
+    legacy_mismatch: true
+    first_name: Raymond
+    last_name: Castillo
+    dob: 1974-12-11
+    address: { line1: 330 Mesquite Dr, city: Austin, state: TX, zip: "78701" }
+    tenure_start: 2009-01-15
+    loyalty_tier: Sprout
+    loyalty_points: 1500
+    risk_inputs: { prior_claims_3yr: 2, late_payments_12mo: 2, tenure_years: 16, credit_score: 690 }
+    bi: { churn: 0.30, upsell: 0.30, price_sensitivity: 0.40, clv: 6100, fraud: false, contactability: PHONE }
+    vehicles:
+      - { ref: v1, year: 2018, make: Ford, model: F-150, financed: false, annual_miles: 16000, usage: COMMUTE }
+    policies:
+      - { ref: p_auto, line: AUTO, tier: PINE, term_months: 6, effective: 2025-02-20, objects: [v1], incidents_5yr: 2,
+          billing: { plan: INSTALLMENTS, autopay: false, paperless: false }, rep: REP-1008 }
+
+  - key: life-suitable
+    covers: Whole-life sale done right — suitability SUITABLE, beneficiaries, disclosures.
+    status: CUSTOMER
+    first_name: Eleanor
+    last_name: Whitmore
+    dob: 1983-05-22
+    address: { line1: 215 Park Ave, city: Albany, state: NY, zip: "12207" }
+    tenure_start: 2018-08-01
+    loyalty_tier: Sprout
+    loyalty_points: 1100
+    risk_inputs: { prior_claims_3yr: 0, late_payments_12mo: 0, tenure_years: 7, credit_score: 780 }
+    bi: { churn: 0.15, upsell: 0.60, price_sensitivity: 0.20, clv: 14200, fraud: false, contactability: EMAIL }
+    policies:
+      - { ref: p_life, line: LIFE_W, tier: EVERGREEN, term_months: 12, effective: 2025-03-05,
+          coverages_extra: [PUA, WAIVER], smoker: false,
+          billing: { plan: PAY_IN_FULL, autopay: true, paperless: true }, rep: REP-1003,
+          suitability: { income: 145000, dependents: 2, existing_coverage: 250000, stated_need: "estate planning + final expenses",
+                         horizon: LONG, risk_tolerance: MEDIUM, outcome: SUITABLE },
+          beneficiaries: [ { name: Thomas Whitmore, relationship: SPOUSE, kind: PRIMARY, pct: 60 },
+                           { name: Grace Whitmore, relationship: CHILD, kind: PRIMARY, pct: 40 },
+                           { name: Estate of E. Whitmore, relationship: ESTATE, kind: CONTINGENT, pct: 100 } ] }
+
+  - key: life-missale
+    covers: Mis-sale seed — whole life to short-horizon/tight-budget; outcome UNSUITABLE.
+    status: CUSTOMER
+    first_name: Curtis
+    last_name: Boyd
+    dob: 1996-01-09
+    address: { line1: 8 Harborview Rd, city: Worcester, state: MA, zip: "01608" }
+    tenure_start: 2024-02-01
+    loyalty_tier: Seedling
+    loyalty_points: 200
+    risk_inputs: { prior_claims_3yr: 0, late_payments_12mo: 1, tenure_years: 1, credit_score: 660 }
+    bi: { churn: 0.55, upsell: 0.25, price_sensitivity: 0.85, clv: 1900, fraud: false, contactability: SMS }
+    policies:
+      - { ref: p_life, line: LIFE_W, tier: EVERGREEN, term_months: 12, effective: 2025-04-18, smoker: false,
+          billing: { plan: INSTALLMENTS, autopay: false, paperless: true }, rep: REP-1003,
+          suitability: { income: 38000, dependents: 0, existing_coverage: 0, stated_need: "wanted cheap coverage, mentioned tight budget",
+                         horizon: SHORT, risk_tolerance: LOW, outcome: UNSUITABLE },
+          beneficiaries: [ { name: Janet Boyd, relationship: PARENT, kind: PRIMARY, pct: 100 } ] }
+
+  - key: retention-target
+    covers: High churn + price sensitive; retention within bounded rep authority.
+    status: CUSTOMER
+    first_name: Tanya
+    last_name: Brooks
+    dob: 1990-09-14
+    address: { line1: 540 Saguaro St, city: Phoenix, state: AZ, zip: "85004" }
+    tenure_start: 2021-03-01
+    loyalty_tier: Sprout
+    loyalty_points: 800
+    risk_inputs: { prior_claims_3yr: 0, late_payments_12mo: 0, tenure_years: 4, credit_score: 735 }
+    bi: { churn: 0.82, upsell: 0.20, price_sensitivity: 0.90, clv: 4800, fraud: false, contactability: SMS }
+    vehicles:
+      - { ref: v1, year: 2020, make: Mazda, model: CX-5, financed: false, annual_miles: 11000, usage: COMMUTE }
+    policies:
+      - { ref: p_auto, line: AUTO, tier: PINE, term_months: 12, effective: 2025-05-01, objects: [v1], incidents_5yr: 0,
+          billing: { plan: INSTALLMENTS, autopay: false, paperless: true }, rep: REP-1008 }
+
+  - key: loyalty-oldgrowth
+    covers: Loyalty redemption — ledger ↔ balance ↔ deductible cascade; OldGrowth perks.
+    status: CUSTOMER
+    legacy_acct: EVG7782M3
+    first_name: Harold
+    last_name: Nyberg
+    dob: 1962-04-27
+    address: { line1: 19 Tamarack Ct, city: Grand Rapids, state: MI, zip: "49503" }
+    tenure_start: 2008-06-01
+    loyalty_tier: OldGrowth
+    risk_inputs: { prior_claims_3yr: 0, late_payments_12mo: 0, tenure_years: 17, credit_score: 800 }
+    bi: { churn: 0.12, upsell: 0.45, price_sensitivity: 0.25, clv: 15600, fraud: false, contactability: EMAIL }
+    vehicles:
+      - { ref: v1, year: 2023, make: Subaru, model: Outback, financed: false, annual_miles: 9000, usage: PLEASURE }
+    pets:
+      - { ref: pet1, name: Biscuit, species: DOG, breed: Labrador, age: 5 }
+    policies:
+      - { ref: p_auto, line: AUTO, tier: EVERGREEN, term_months: 12, effective: 2025-01-20, objects: [v1], incidents_5yr: 0,
+          billing: { plan: PAY_IN_FULL, autopay: true, paperless: true }, rep: REP-1001 }
+      - { ref: p_pet, line: PET, tier: EVERGREEN, term_months: 12, effective: 2025-01-20, objects: [pet1],
+          billing: { plan: PAY_IN_FULL, autopay: true, paperless: true }, rep: REP-1001 }
+    ledger:
+      - { ts: 2023-07-01, delta: 5200, reason: PREMIUM_EARN, expires_on: 2025-07-01 }
+      - { ts: 2024-03-15, delta: 2100, reason: BUNDLE_BONUS, expires_on: 2026-03-15 }
+      - { ts: 2024-11-02, delta: -1800, reason: REDEEM_DEDUCTIBLE_CREDIT }
+      - { ts: 2018-05-01, delta: 1500, reason: LEGACY_EARN }   # pre-2019 no-expiry bug (expires_on null)
+
+  - key: umbrella-plus
+    covers: NEST_PLUS (Auto+Home+Umbrella); umbrella underlying dependency.
+    status: CUSTOMER
+    first_name: Vincent
+    last_name: Okonkwo
+    dob: 1976-10-08
+    address: { line1: 88 Peachtree Cir, city: Atlanta, state: GA, zip: "30303" }
+    tenure_start: 2014-07-01
+    loyalty_tier: Timber
+    loyalty_points: 5000
+    risk_inputs: { prior_claims_3yr: 0, late_payments_12mo: 0, tenure_years: 11, credit_score: 770 }
+    bi: { churn: 0.20, upsell: 0.55, price_sensitivity: 0.25, clv: 18900, fraud: false, contactability: EMAIL }
+    vehicles:
+      - { ref: v1, year: 2022, make: Acura, model: MDX, financed: true, annual_miles: 13000, usage: COMMUTE }
+    dwellings:
+      - { ref: d1, type: home, year_built: 2010, construction: MASONRY, roof_age: 8, sq_ft: 3100, replacement_cost: 610000, protection_class: 3, dist_to_coast_mi: 220 }
+    policies:
+      - { ref: p_auto, line: AUTO, tier: EVERGREEN, term_months: 12, effective: 2025-02-10, objects: [v1], incidents_5yr: 0,
+          coverages_extra: [GAP], billing: { plan: PAY_IN_FULL, autopay: true, paperless: true }, rep: REP-1004 }
+      - { ref: p_home, line: HOME, tier: EVERGREEN, term_months: 12, effective: 2025-02-10, objects: [d1],
+          billing: { plan: PAY_IN_FULL, autopay: true, paperless: true }, rep: REP-1004 }
+      - { ref: p_umbr, line: UMBR, tier: EVERGREEN, term_months: 12, effective: 2025-02-10, underlying: p_auto,
+          billing: { plan: PAY_IN_FULL, autopay: true, paperless: true }, rep: REP-1004 }
+    bundle: { code: NEST_PLUS, members: [p_auto, p_home, p_umbr] }
