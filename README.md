@@ -10,18 +10,17 @@
 > legacy-encrusted residential insurance company. **The complexity is the
 > point** — but it is *load-bearing* complexity, not decoration.
 
-## What this is
-
 `peico-bench` measures how well an autonomous agent can act as a **sales and
 service representative** for a fictional consumer insurance company, **PEICO**.
-An agent is dropped into a multi-turn conversation with a simulated customer,
-given a set of tools that read and write a realistic insurance database, and
-scored on whether it **reached the right outcome and changed the right data** —
-without mis-selling, violating regulation, or touching records it shouldn't.
+Your agent is dropped into a multi-turn conversation with a simulated customer,
+given read/write access to a realistic insurance database, and scored on whether
+it **reached the right outcome and changed the right data** — without mis-selling,
+violating regulation, or touching records it shouldn't.
 
-It is closely modeled on Sierra's **τ-bench / τ²-bench** (user simulator + tool
-API + database end-state assertion). If you haven't read those papers, read them
-before contributing — this project reuses their core architecture.
+Bring your own agent, in any stack. The bench owns the world and the rules; you
+own the player. The reference implementation lives in
+[`peico-reference-agent`](../peico-reference-agent) — clone it to see a working
+agent end-to-end, or use it as the template for your own.
 
 ## What the bench owns vs. what you own
 
@@ -48,67 +47,85 @@ never produces a customer turn. As long as it speaks the agent contract (see
 outside the bench's grading — point your own harness or experiments at it. The
 bench's grading is just *one* opinionated way to score against this world.
 
-## Why insurance
+## What makes it hard
 
-Insurance is an unusually good substrate for an agent benchmark:
+PEICO ("**P**rotective **E**vergreen **I**nsurance **CO**mpany") runs on
+**EVERGREEN**, a mainframe first written in 1987 and layered on by decades of
+well-meaning people who never talked to each other: grandfathered tiers nobody
+sells anymore, two customer-ID systems that don't reconcile, promo codes with
+inconsistent rules, cryptic coverage abbreviations, and products that exist in
+some states for purely historical licensing reasons. Your agent has to navigate
+that and still do right by the customer. Specifically, it's scored on whether it
+can:
 
-- **Objective, checkable outcomes.** A policy is either bound at the right tier
-  with the right premium, or it isn't. Most scoring is a database diff, not a
-  vibe check.
-- **The obvious action is often wrong.** Suitability rules, mandatory
-  disclosures, state-by-state eligibility, and risk-based declines mean the
-  highest-scoring move is sometimes *to not make the sale*. This is where weak
-  agents fail and the benchmark earns its discrimination.
-- **Real ambiguity from the customer side.** Customers don't know their own
-  coverage needs, misstate facts, omit risk factors, and have hidden budgets —
-  perfect fuel for a user simulator.
-- **Legitimately complex world.** Product lines × tiers × regions × promotions ×
-  bundles × loyalty × risk creates a combinatorially rich space without any
-  artificial padding.
+- **Reach the right outcome, exactly.** A policy is either bound at the right tier
+  with the right premium, or it isn't. Most scoring is a database diff, not a vibe
+  check.
+- **Know when *not* to act.** Suitability rules, mandatory disclosures,
+  state-by-state eligibility, and risk-based declines mean the highest-scoring
+  move is sometimes *to not make the sale*. The obvious action is often wrong.
+- **Handle a customer who doesn't know what they need.** Customers misstate facts,
+  omit risk factors, and have hidden budgets and goals. The stated goal is not
+  always the optimal outcome.
+- **Find the rules, not memorize them.** Every quirk lives in retrievable
+  documentation or a queryable tool — never only in a test author's head. We
+  measure *navigation*, not trivia.
 
-## The lore (and the quirk)
+> The lore is fun (mascot: **Sappy the Pinecone**; tagline: *"15 pinecones could
+> save you 15%"*), but the mechanics are rigorous. The full quirk catalog is in
+> [`docs/06`](docs/06-lore-and-quirks.md).
 
-PEICO ("**P**rotective **E**vergreen **I**nsurance **CO**mpany") is a parody of a
-big-brand direct insurer. Mascot: **Sappy the Pinecone**. Tagline: *"15 pinecones
-could save you 15%."*
+## How scoring works
 
-The conceit: PEICO's core system, **EVERGREEN**, is a mainframe first written in
-1987 and layered on by decades of well-meaning people who did not talk to each
-other. So the data model has grandfathered tiers nobody sells anymore, two
-customer-ID systems that don't fully reconcile, promo codes with inconsistent
-rules, cryptic coverage abbreviations, and products that exist in some states for
-purely historical licensing reasons.
+Every task is graded on **outcomes, not process** — the bench never asserts on
+which tools your agent called. Two gates:
 
-**Critical design rule:** every quirk lives in **retrievable documentation or a
-tool the agent can query** — never only in the test author's head. We are
-measuring *"can the agent navigate a gnarly real system correctly,"* not
-*"did the agent memorize trivia."* Memorization tasks are unfair and useless.
+- **Changeset (transactional tasks).** The cumulative seed→final database diff
+  must equal the expected changeset. Right data, exactly.
+- **LLM judge (every task).** A rubric judge checks correctness and good-faith
+  engagement with the customer.
+
+A task passes only if its required checks pass **and** the agent terminated the
+conversation itself (running out of `max_turns` counts as incomplete). Repeated
+trials roll up into **`pass^k`** (passed all *k* attempts). The full contract is
+in [`docs/08`](docs/08-agent-interface-and-harness-spec.md).
+
+## Benchmark your own agent
+
+The bench drives **any** agent that implements a small contract: a factory
+`(Environment) -> AgentClient`, where the client exposes `welcome()` (the rep
+speaks first) and `respond(customer_message) -> reply`. Your agent reads and
+writes the world only through the injected `Environment`
+(`query`/`write`/`rate`/`search_kb`).
+
+The contract is transport-agnostic. Today it runs **in-process** — the bench
+imports your factory by path — with an HTTP transport (register a remote agent
+endpoint) planned. The reference agent's
+[`adapter.py`](../peico-reference-agent/peico_agent/adapter.py) is the canonical
+example; copy it as your starting point.
+
+```bash
+# from a venv that has both peico (this repo) and your agent installed:
+peico-eval update_contact_email --agent your_module:make_agent -k 5 -v
+```
 
 ## Quickstart
 
-Uses [uv](https://docs.astral.sh/uv/). Build the world once, then run a task
-against an agent implementation:
+Uses [uv](https://docs.astral.sh/uv/). Build the world once, then run the
+reference agent against it (the reference agent installs this bench, so the eval
+runs from there):
 
 ```bash
+# in peico-bench: build out/peico.sqlite once
 uv sync
-python src/peico/build_reference.py && python src/peico/generate.py   # build out/peico.sqlite
-```
+python src/peico/build_reference.py && python src/peico/generate.py
 
-The harness drives **any** agent that exposes a factory `(Environment) -> AgentClient`;
-the reference agent lives in [`peico-reference-agent`](../peico-reference-agent).
-Run the eval from a venv that has both packages (the reference agent installs the
-bench, so run it from there):
-
-```bash
+# in peico-reference-agent: run a task end-to-end
 cd ../peico-reference-agent
 uv run peico-eval update_contact_email --agent peico_agent.adapter:make_agent -v
 ```
 
-The bench owns the world, the environment service (`query`/`write`/`rate`/
-`search_kb`), the customer simulator, and grading; the agent owns its tools, loop,
-model, and prompts. See `docs/07` and `docs/08` for the contract.
-
-## Roadmap
+## Status
 
 - **v1 — The Dataset (done).** A complete, internally-consistent, deterministic
   world: schema, all residential product lines, a deterministic rating engine,
@@ -118,36 +135,43 @@ model, and prompts. See `docs/07` and `docs/08` for the contract.
   first end-to-end task (`update_contact_email`) runs green against the reference
   agent; more tasks and the wire/HTTP transport come next.
 - **v3 — The Tasks.** A dev split (public) and a held-out test split (private).
-- **v4 — The Website.** Database visualizer + self-report leaderboard (score and
-  token/cost reported together), held-out verification.
-- **Later — Internal Triage Bench.** A separate product: an internal Q&A/triage
-  agent over the same world. Explicitly out of scope until the above ships.
+- **v4 — The Website.** Database visualizer + leaderboard (score and token/cost
+  reported together), held-out verification.
 
-## Decisions locked so far
+### Results & leaderboard
 
-| Decision | Choice |
+*Coming soon (v4).* A public leaderboard with held-out verification is planned.
+Until then, the reference agent is the live baseline — `update_contact_email`
+currently runs `pass^1 = 1/1`.
+
+## Docs
+
+Deep dives live in [`docs/`](docs/):
+
+| Doc | What's in it |
 |---|---|
-| v1 deliverable | The dataset only (all residential product lines) |
-| Leaderboard integrity | Self-report + held-out private test split |
-| Scoring model | Two gates: changeset DB-diff (transactional tasks) + LLM-judge (every task) |
-| Access model | Environment-as-a-service: raw `query`/`write` SQL + `rate()`; grade outcomes, not tool calls |
-| Build order | Docs → schema → generators → harness |
+| [`00`](docs/00-design-principles.md) | Non-negotiable rules (determinism, checkability) |
+| [`01`](docs/01-world-model.md) | PEICO: product lines, tiers, regions, promos, loyalty, risk |
+| [`02`](docs/02-data-model.md) | Relational schema |
+| [`03`](docs/03-rating-engine.md) | Deterministic pricing — the load-bearing piece |
+| [`04`](docs/04-data-generation.md) | How the dataset is built (code for numbers, AI for flavor) |
+| [`05`](docs/05-benchmark-design.md) | Tasks, two-gate scoring, simulator, leaderboard |
+| [`06`](docs/06-lore-and-quirks.md) | The catalog of legacy quirks (each mapped to a doc/tool) |
+| [`07`](docs/07-interface-and-access.md) | Environment-as-a-service access model |
+| [`08`](docs/08-agent-interface-and-harness-spec.md) | The authoritative bench↔agent contract |
 
 ## Repo layout
 
 ```
-docs/
-  00-design-principles.md   The non-negotiable rules (determinism, checkability)
-  01-world-model.md         PEICO: product lines, tiers, regions, promos, loyalty, risk, BI
-  02-data-model.md          Relational schema
-  03-rating-engine.md       Deterministic pricing — the load-bearing piece
-  04-data-generation.md     How the dataset is built (code for numbers, AI for flavor)
-  05-benchmark-design.md    Tasks, two-gate scoring, simulator, leaderboard
-  06-lore-and-quirks.md     The catalog of legacy quirks (each mapped to a doc/tool)
-  07-interface-and-access.md  Environment-as-a-service access model (raw SQL + rate(), grade outcomes)
-  08-agent-interface-and-harness-spec.md  The authoritative bench↔agent contract
+docs/                       Design docs (table above)
 src/peico/
   build_reference.py, generate.py, rating.py, schema*.sql   The world + physics
   harness/                  World, environment service, simulator, grading, runner
 tasks/                      Task definitions (persona + setup + checks)
 ```
+
+## Acknowledgments
+
+Closely modeled on Sierra's **τ-bench / τ²-bench** (user simulator + tool API +
+database end-state assertion). If you're contributing to the benchmark itself,
+read those papers first — this project reuses their core architecture.
