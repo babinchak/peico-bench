@@ -1,1 +1,4 @@
 PyYAML>=6.0
+# Harness (customer simulator + LLM judge). The data/rating core needs only PyYAML.
+litellm>=1.40
+python-dotenv>=1.0

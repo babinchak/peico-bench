@@ -59,14 +59,39 @@ tool the agent can query** — never only in the test author's head. We are
 measuring *"can the agent navigate a gnarly real system correctly,"* not
 *"did the agent memorize trivia."* Memorization tasks are unfair and useless.
 
+## Quickstart
+
+Uses [uv](https://docs.astral.sh/uv/). Build the world once, then run a task
+against an agent implementation:
+
+```bash
+uv sync
+python src/peico/build_reference.py && python src/peico/generate.py   # build out/peico.sqlite
+```
+
+The harness drives **any** agent that exposes a factory `(Environment) -> AgentClient`;
+the reference agent lives in [`peico-reference-agent`](../peico-reference-agent).
+Run the eval from a venv that has both packages (the reference agent installs the
+bench, so run it from there):
+
+```bash
+cd ../peico-reference-agent
+uv run peico-eval update_contact_email --agent peico_agent.adapter:make_agent -v
+```
+
+The bench owns the world, the environment service (`query`/`write`/`rate`/
+`search_kb`), the customer simulator, and grading; the agent owns its tools, loop,
+model, and prompts. See `docs/07` and `docs/08` for the contract.
+
 ## Roadmap
 
-- **v1 — The Dataset (current).** A complete, internally-consistent, deterministic
+- **v1 — The Dataset (done).** A complete, internally-consistent, deterministic
   world: schema, all residential product lines, a deterministic rating engine,
-  generated data, and the policy/knowledge-base documents. No harness yet. The
-  dataset is designed so the harness slots in later for free.
-- **v2 — The Harness.** Tool API, user simulator, per-task DB snapshot/reset,
-  programmatic + rubric scoring.
+  generated data, and the policy/knowledge-base documents.
+- **v2 — The Harness (in progress).** Environment-as-a-service interface, the
+  bench-owned user simulator, per-session DB isolation, two-gate scoring. The
+  first end-to-end task (`update_contact_email`) runs green against the reference
+  agent; more tasks and the wire/HTTP transport come next.
 - **v3 — The Tasks.** A dev split (public) and a held-out test split (private).
 - **v4 — The Website.** Database visualizer + self-report leaderboard (score and
   token/cost reported together), held-out verification.
@@ -79,8 +104,9 @@ measuring *"can the agent navigate a gnarly real system correctly,"* not
 |---|---|
 | v1 deliverable | The dataset only (all residential product lines) |
 | Leaderboard integrity | Self-report + held-out private test split |
-| Scoring model | Programmatic DB-diff primary; LLM-judge only for soft/regulatory checks |
-| Build order | Docs → schema → generators → (later) harness |
+| Scoring model | Two gates: changeset DB-diff (transactional tasks) + LLM-judge (every task) |
+| Access model | Environment-as-a-service: raw `query`/`write` SQL + `rate()`; grade outcomes, not tool calls |
+| Build order | Docs → schema → generators → harness |
 
 ## Repo layout
 
@@ -91,7 +117,12 @@ docs/
   02-data-model.md          Relational schema
   03-rating-engine.md       Deterministic pricing — the load-bearing piece
   04-data-generation.md     How the dataset is built (code for numbers, AI for flavor)
-  05-benchmark-design.md    Forward-looking: tasks, scoring, simulator, leaderboard
+  05-benchmark-design.md    Tasks, two-gate scoring, simulator, leaderboard
   06-lore-and-quirks.md     The catalog of legacy quirks (each mapped to a doc/tool)
-  07-interface-and-access.md  How the agent touches the world (writes=tools, reads=SQL+wiki)
+  07-interface-and-access.md  Environment-as-a-service access model (raw SQL + rate(), grade outcomes)
+  08-agent-interface-and-harness-spec.md  The authoritative bench↔agent contract
+src/peico/
+  build_reference.py, generate.py, rating.py, schema*.sql   The world + physics
+  harness/                  World, environment service, simulator, grading, runner
+tasks/                      Task definitions (persona + setup + checks)
 ```

@@ -31,7 +31,10 @@ def _isodates(obj):
         return obj.isoformat()
     return obj
 
-from rating import load_context, price  # local module (run from src/ or via sys.path)
+try:  # works both as an installed package and as a bare script run from src/peico
+    from peico.rating import load_context, price
+except ModuleNotFoundError:
+    from rating import load_context, price
 
 ROOT = Path(__file__).resolve().parents[2]
 DB = ROOT / "out" / "peico.sqlite"

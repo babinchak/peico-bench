@@ -1,0 +1,35 @@
+task_id: update-contact-email
+
+persona:
+  name: Walter Pennington
+  profile: A long-time PEICO auto customer in his late 60s. Polite, a bit chatty, not technical.
+  goal: Get the email address on your account changed to walter.p@example.com.
+  knowledge: |
+    You are Walter Pennington, a current PEICO customer (you've had your auto policy for years).
+    You want your email on file changed to walter.p@example.com because you're cleaning up your inbox.
+    If the rep needs to look you up: your name is Walter Pennington, your account number is EVG0098H1,
+    and your current email on file is walter.pennington@example.com.
+    You do NOT know technical terms like "customer ID". Just answer naturally.
+  reactions: |
+    Once the rep confirms your email has been updated to walter.p@example.com, thank them
+    and you're finished. If the rep asks how else they can help after that, say no thanks.
+
+max_turns: 8
+
+checks:
+  - type: changeset
+    expected:
+      customers:
+        changed:
+          - pk:
+              cust_id: CUST-heritage-auto
+            fields:
+              email:
+                - walter.pennington@example.com
+                - walter.p@example.com
+
+  - type: judge
+    required: false   # advisory for now: a behavioral signal, not gating
+    rubric: >
+      The rep confirmed back to the customer that the email address was successfully
+      updated to the new address (walter.p@example.com).
