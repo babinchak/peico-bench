@@ -6,10 +6,6 @@
 
 # PEICO Insurance Agent Benchmark (`peico-bench`)
 
-> A benchmark for LLM sales & service agents, set inside a deliberately gnarly,
-> legacy-encrusted residential insurance company. **The complexity is the
-> point** — but it is *load-bearing* complexity, not decoration.
-
 `peico-bench` measures how well an autonomous agent can act as a **sales and
 service representative** for a fictional consumer insurance company, **PEICO**.
 Your agent is dropped into a multi-turn conversation with a simulated customer,
@@ -19,7 +15,7 @@ violating regulation, or touching records it shouldn't.
 
 Bring your own agent, in any stack. The bench owns the world and the rules; you
 own the player. The reference implementation lives in
-[`peico-reference-agent`](../peico-reference-agent) — clone it to see a working
+[`peico-reference-agent`](https://github.com/babinchak/peico-reference-agent) — clone it to see a working
 agent end-to-end, or use it as the template for your own.
 
 ## What the bench owns vs. what you own
@@ -101,7 +97,7 @@ writes the world only through the injected `Environment`
 The contract is transport-agnostic. Today it runs **in-process** — the bench
 imports your factory by path — with an HTTP transport (register a remote agent
 endpoint) planned. The reference agent's
-[`adapter.py`](../peico-reference-agent/peico_agent/adapter.py) is the canonical
+[`adapter.py`](https://github.com/babinchak/peico-reference-agent/blob/master/peico_agent/adapter.py) is the canonical
 example; copy it as your starting point.
 
 ```bash
