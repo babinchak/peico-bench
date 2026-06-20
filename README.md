@@ -23,6 +23,31 @@ It is closely modeled on Sierra's **τ-bench / τ²-bench** (user simulator + to
 API + database end-state assertion). If you haven't read those papers, read them
 before contributing — this project reuses their core architecture.
 
+## What the bench owns vs. what you own
+
+The benchmark is **agent-agnostic**. It owns the entire world and the rules of
+the game; *you* own the player. The line between the two is the whole point — it's
+what makes scores comparable across wildly different agents, and what keeps the
+game honest (your agent can't write the customer's lines or grade its own work).
+
+| The bench owns | Your agent implementation owns |
+|---|---|
+| **The world** — the EVERGREEN database, schema, generated data, and policy/KB documents | **The loop** — how it reasons, plans, and decides when it's done |
+| **The customer** — the simulated customer, their persona, hidden goals, and *every customer turn* | **The rep's turns** — what your agent says back to the customer |
+| **The scenario** — the task, its setup, and the success criteria | **The tools** — what it calls to navigate and mutate the world (names, validation, granularity are all yours) |
+| **The physics** — the deterministic rating engine (`rate()`) and other canonical calculations | **The writes** — the actual SQL/mutations it issues against the world |
+| **The grading** — the two gates (changeset DB-diff + LLM judge) and `pass^k` | **The model & prompts** — which LLM, system prompt, examples, anything |
+| **The interface** — the environment service (`query`/`write`/`rate`/`search_kb`) and the agent contract | **The stack** — any language, any framework, any runtime |
+
+Your agent only ever sees the **environment service** the bench injects per
+session — it never holds the database, never sees the persona's hidden state, and
+never produces a customer turn. As long as it speaks the agent contract (see
+`docs/08`), the bench can drive it.
+
+**Write your own evals, too.** The same world + environment service is reusable
+outside the bench's grading — point your own harness or experiments at it. The
+bench's grading is just *one* opinionated way to score against this world.
+
 ## Why insurance
 
 Insurance is an unusually good substrate for an agent benchmark:
