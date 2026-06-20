@@ -7,61 +7,56 @@ built yet.
 ## The loop (τ-bench shaped)
 
 ```
-        ┌─────────────┐     tool calls      ┌──────────────┐
-        │   Agent     │ ──────────────────> │  Tool API     │ ──> peico.sqlite
-        │ (system     │ <────────────────── │  (read/write) │     (per-task snapshot)
-        │  under test)│     tool results    └──────────────┘
-        └──────┬──────┘
-               │ natural-language turns
-        ┌──────▼──────┐
-        │ User        │  persona + hidden goal + constraints + non-disclosure rules
-        │ Simulator   │
-        └─────────────┘
+   ┌──────────────┐  start / turn(customer_msg)   ┌──────────────┐
+   │ User         │ ────────────────────────────> │   Agent      │   query / write / rate
+   │ Simulator    │ <──────────────────────────── │ (any impl,   │ ──────────────────────┐
+   │ (bench owns  │     reply (+ terminate?)       │  own tools)  │ <─────────────────────┘
+   │  + powers it)│                                └──────────────┘   rows / changeset
+   └──────────────┘                                       │
+                                                          ▼
+                                          Environment service (bench)
+                                          per-session copy of peico.sqlite
 After the conversation ends:
-   programmatic checker  ── DB diff vs expected end-state ── primary score
-   rubric LLM-judge      ── disclosures / mis-selling / refusal ── soft margin
+   changeset checker ── session DB diff (seed→final) vs expected ── when transactional
+   rubric LLM-judge  ── correctness + good-faith engagement ── every task
 ```
 
-## Tool API (the contract)
+## Access model (the contract)
 
-The interface model is specified in full in `07-interface-and-access.md`. Summary:
+Specified in full in `07-interface-and-access.md` and `08-agent-interface-and-harness-spec.md`.
+Summary: the bench does **not** define a tool API. It exposes the **environment as a
+service** — `query(sql)` (read), `write(sql)` (mutate the session copy; returns the
+changeset), and physics utilities like `rate()` — and each agent composes its own
+tools and loop over those primitives, in any language. Reads and writes are both raw
+SQL; rule enforcement lives in the **expected outcome**, not the write path
+(Principle 9). The dataset's `eligibility_rules`, `tiers.sellable`,
+`requires_suitability`, etc. are what `rate()` and `query` read. Navigating the
+gnarly schema is the skill.
 
-- **Reads (wide open):** read-only SQL `query_db` over the per-task snapshot;
-  wiki retrieval `search_kb` / `get_doc`; engine query tools `quote` (price
-  preview) and `check_eligibility`. Navigating the gnarly schema is the skill.
-- **Writes (rule-enforcing tools only, never raw SQL):** `bind_policy`,
-  `endorse_policy`, `change_tier`, `apply_promo`, `cancel_policy`,
-  `reinstate_policy`, `create_bundle`/`break_bundle`, `record_suitability`,
-  `redeem_loyalty`, `open_fnol`, `update_contact`.
+### Difficulty axis: which utilities are exposed
+Same task, same checker, two ceilings — **easy mode** exposes the physics helpers
+(`rate`, eligibility), **hard mode** withholds them so the agent must `query` the
+rule rows + read the wiki and compute price/eligibility itself before writing.
+Separates strong from weak models without authoring new content.
 
-Every write tool enforces the world's rules (eligibility, suitability,
-dependencies, fraud hold) and returns structured errors — so a bad agent *can*
-make a wrong call, and the DB records it for the diff. The dataset's
-`eligibility_rules`, `tiers.sellable`, `requires_suitability`, etc. are exactly
-what these tools (and `query_db`) read.
+## Scoring (two gates, per Principle 5)
 
-### Difficulty axis: tool availability
-Same task, same checker, two ceilings — **easy mode** exposes the engine tools
-(`quote`/`check_eligibility`), **hard mode** withholds them so the agent must
-`SELECT` the rule rows + read the wiki and compute eligibility/price itself before
-writing. Separates strong from weak models without authoring new content.
+Grading is on **outcomes, not tool calls** (every agent's tools differ). Two checks:
 
-## Scoring (programmatic-primary, per Principle 5)
+1. **Changeset** (when the task changes state) — the session DB diff (seed→final)
+   must equal the task's expected changeset: required rows present with correct
+   values (tier, premium, coverages, bundle, loyalty), and **nothing else mutated**.
+   `final_premium_cents` must match the rating engine exactly.
+2. **LLM-judge** (every task) — rubric over the transcript: required disclosures
+   present, no mis-sale, correct refusal on negative-space tasks, and good-faith
+   engagement (did the rep actually address the customer). Pinned model, structured
+   output.
 
-A task defines an **expected diff**: the set of rows that must change (and their
-target values) and the set that must **not** change. Score components:
-
-1. **Outcome correctness** (largest weight) — required rows present with correct
-   values (tier, premium, coverages, bundle, loyalty entries).
-2. **No collateral damage** — nothing outside the allowed write-set mutated.
-3. **Premium exactness** — `final_premium_cents` matches the rating engine.
-4. **Process legality** — no illegal tool call succeeded (e.g., bound an
-   ineligible tier, skipped suitability).
-5. **Soft margin (judge, rubric)** — required disclosures present; no mis-sale;
-   correct refusal/decline when the task is a negative-space task.
-
-Report `pass@1` and `pass^k` (consistency across k seeds) — agents that only
-sometimes get it right should not look solved.
+A task passes when all its required checks pass **and** the conversation completed
+(the agent signalled terminate before `max_turns`); an incomplete conversation fails
+by default. There is no separate "process legality" score. Report `pass@1` and
+`pass^k` (consistency across k seeds) — agents that only sometimes get it right
+should not look solved.
 
 ## User simulator (don't underweight this)
 
@@ -72,10 +67,16 @@ Each task ships a persona file:
 - **constraints** (budget ceiling, won't switch banks, etc.).
 - **non-disclosure list** — facts they reveal *only if explicitly asked*. This is
   the main difficulty lever; without it tasks are trivial.
-- **stop conditions** — when the customer ends the call (satisfied / frustrated /
-  out of scope).
+- **reaction rules** — how the customer responds to what the rep surfaces, incl.
+  things the customer *has but forgot* (e.g. a SEQUOIA pet policy after the pet died
+  — the goal is for the rep to discover it via reads and advise dropping it). The
+  customer never reads the DB, so every fact it must react to is authored here.
+- **stop conditions** — when the customer is satisfied. The **rep speaks first**
+  (welcome) and **last** (closing); the customer expresses satisfaction and the rep
+  closes with a terminate signal.
 
-The simulator is a separate, fixed model+prompt, versioned with the bench, so
+The simulator is a separate, fixed model+prompt that **the bench owns and powers**
+(the keystone of honesty — the agent can't fabricate customer turns), versioned so
 leaderboard comparisons are apples-to-apples.
 
 ## Task taxonomy (so the dataset covers them)
@@ -95,8 +96,10 @@ requirement *on the dataset*, tracked in `04`'s scenario seeds.
 ## Splits & leaderboard (self-report + held-out)
 - **Dev split** (public): tasks + expected diffs published; people iterate.
 - **Test split** (private): held out; used to verify self-reported numbers.
-- Submissions report **score AND tokens/cost AND model**; a model that wins by
-  burning 50× tokens is shown as such.
+- The benchmark itself reports **only correctness** (score). Token/cost/latency are
+  **not** part of grading — they're a property of a given agent+model, surfaced
+  separately (e.g. the website page running the *reference* agent across models with
+  score + cost + latency), not of the bench.
 - Bench is **versioned**; contamination is fought by rotating/withholding test
   tasks and by spot-running submitted agents/transcripts.
 

@@ -42,17 +42,23 @@ through a **knowledge-base document or a tool**. We measure navigation skill, no
 recall of undocumented trivia. See `06-lore-and-quirks.md` — each quirk row names
 the doc/tool that exposes it.
 
-## 5. Programmatic-primary scoring
+## 5. Two-gate scoring: changeset + judge
 
-- **Objective outcomes → code.** Bound at right tier? Correct premium? Right
-  discount? Only the intended records mutated? All deterministic assertions.
-- **Soft/regulatory outcomes → rubric LLM-judge, minimized.** Required disclosure
-  made? Mis-selling avoided? Correct refusal? Rubric + structured output, never
-  free-form vibes. Keep the judge's surface area as small as possible — it is the
-  weakest, most-attacked link.
+- **Objective outcomes → code (the changeset).** Bound at right tier? Correct
+  premium? Right discount? Only the intended records mutated? A deterministic diff
+  of the session DB (seed→final) against the task's expected changeset. Present
+  whenever a task changes state.
+- **Conversation quality → rubric LLM-judge.** Runs on **every** task (some tasks
+  change nothing and are judge-only). Two duties: a correctness/regulatory rubric
+  (disclosure made? mis-sale avoided? correct refusal?) and good-faith engagement
+  (did the rep actually address the customer?). Rubric + structured output, never
+  free-form vibes — it is the weakest, most-attacked link, so pin the model and keep
+  its surface small.
 
-A useful invariant: a task's score should be **mostly** recoverable from the DB
-diff alone, with the judge adjusting only the soft margin.
+There is no separate "process legality" score: we grade the **outcome**, not which
+tools were called (every agent's tools differ). A transactional task's verdict is
+mostly recoverable from the changeset, with the judge covering communication and the
+soft margin.
 
 ## 6. AI writes flavor, code writes facts
 
@@ -81,13 +87,27 @@ never disagree, and why a task can ask the agent to *explain* a rule as well as
 `quote` tool; it is the eligibility/discount/promo logic that must be inspectable.
 See `07-interface-and-access.md`.
 
-## 9. Writes are rule-enforcing tools; reads are wide open
+## 9. The agent owns its tools; the bench owns the world and the outcome
 
-Mutation happens **only** through tools that enforce the world's rules — never via
-raw SQL — because the score is a DB diff and raw `UPDATE` lets an agent satisfy the
-diff without doing the work. Reads, being pure, are exposed broadly (read-only SQL
-+ wiki + engine query tools): navigating the gnarly schema *is* the skill under
-test. See `07-interface-and-access.md`.
+PEICO is an **open benchmark**: many independent agent implementations compete, in
+any language, with whatever tools and loop they choose. So the bench does **not**
+define a tool API. It exposes the **environment as a service** — `query(sql)`
+(read), `write(sql)` (mutate the session DB), and physics utilities like `rate()` —
+and each agent composes those into its own tools however it sees fit.
+
+Raw SQL writes are therefore **allowed** (this reverses an earlier draft that
+banned them). Rule enforcement does not live in the write path; it lives in the
+**expected outcome**. An ineligible request's correct end-state is *no change*
+(+ a refusal), so an agent that writes the illegal row simply fails the diff —
+negative space (Principle 7) still works. And knowing the correct changeset *is* the
+work: to write the right premium you must compute it through `rate()`.
+
+Cheating is bounded by **two gates**, not by locking the write path: the
+**changeset** (right outcome) and the **LLM-judge** (legitimate, coherent,
+responsive conversation), with the bench owning the customer simulator so the
+dialogue can't be fabricated. The cost is an authoring discipline — every expected
+changeset must fully encode the rule-correct outcome (Principle 3 is what makes that
+possible). See `07-interface-and-access.md` and `08-agent-interface-and-harness-spec.md`.
 
 ## 10. Internal consistency is testable
 
